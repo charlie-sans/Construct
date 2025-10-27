@@ -1,0 +1,36 @@
+// Construct Language - Loop and Function Examples
+
+// Function definitions
+fn add(a, b) = a + b
+
+fn multiply(x, y) = x * y
+
+fn square(n) = multiply(n, n)
+
+fn is_positive(n) = n > 0
+
+// If expression example
+let age = 25
+let status = if age >= 18 then "adult" else "minor"
+
+// Function applications
+let sum_result = add(10, 5)
+let product_result = multiply(4, 3)
+let square_result = square(7)
+
+// Boolean checks
+let positive_check = is_positive(42)
+let negative_check = is_positive(-5)
+
+// Pattern matching example (single line)
+let number = 2
+let desc = match number: | 1 -> "one" | 2 -> "two" | _ -> "other"
+
+// Top-level expression statements (no let binding)
+dump(status)
+dump(sum_result)
+dump(product_result)
+dump(square_result)
+dump(positive_check)
+dump(negative_check)
+dump(desc)

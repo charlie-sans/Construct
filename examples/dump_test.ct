@@ -1,0 +1,5 @@
+# Test dump() function for I/O
+# This demonstrates printing various types to stdout
+
+# Simple integer dump
+dump(42)

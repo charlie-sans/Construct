@@ -1,0 +1,14 @@
+# Comprehensive test
+# Test 1: Arithmetic
+result1: Int = 10 + 5 * 2  # Should be 20
+
+# Test 2: Comparison
+result2: Bool = 15 > 10    # Should be true (1)
+
+# Test 3: If-expression  
+result3: Int = if (5 < 10)
+                  then 100
+                  else 200  # Should be 100
+
+# Final: Complex expression
+(result1 + result3) / 6    # (20 + 100) / 6 = 120 / 6 = 20

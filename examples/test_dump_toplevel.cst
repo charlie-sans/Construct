@@ -1,0 +1,9 @@
+// Test top-level expression statements
+
+let x = 42
+let msg = "Hello, World!"
+let flag = true
+
+dump(x)
+dump(msg)
+dump(flag)

@@ -1,0 +1,48 @@
+// Comprehensive test showcasing proper function linking with correct return types
+
+// Integer functions
+fn add(a, b) = a + b
+fn subtract(a, b) = a - b
+fn multiply(a, b) = a * b
+fn absolute(n) = if n < 0 then 0 - n else n
+
+// Boolean functions (return i1)
+fn is_positive(n) = n > 0
+fn is_even(n) = (n % 2) == 0
+fn is_greater(a, b) = a > b
+
+// Higher-order functions (calling other functions)
+fn square(n) = multiply(n, n)
+fn double(n) = add(n, n)
+fn is_positive_and_even(n) = is_even(n)
+
+// Test all functions
+let val1 = add(10, 5)
+let val2 = subtract(20, 8)
+let val3 = multiply(6, 7)
+let val4 = absolute(-15)
+let val5 = square(5)
+let val6 = double(7)
+
+let bool1 = is_positive(42)
+let bool2 = is_positive(-10)
+let bool3 = is_even(10)
+let bool4 = is_even(7)
+let bool5 = is_greater(15, 10)
+let bool6 = is_greater(5, 20)
+let bool7 = is_positive_and_even(8)
+
+dump(val1)
+dump(val2)
+dump(val3)
+dump(val4)
+dump(val5)
+dump(val6)
+
+dump(bool1)
+dump(bool2)
+dump(bool3)
+dump(bool4)
+dump(bool5)
+dump(bool6)
+dump(bool7)

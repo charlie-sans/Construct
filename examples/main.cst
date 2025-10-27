@@ -1,0 +1,11 @@
+let fibonacci = fn(n: Int) -> if n <= 1 then n else fibonacci(n - 1) + fibonacci(n - 2)
+let result: Int = fibonacci(5)  # Should be 5
+dump(result)  # prints 5
+match result:
+  | 0 -> dump("zero")
+  | 1 -> dump("one")
+  | 2 -> dump("two")
+  | 3 -> dump("three")
+  | 4 -> dump("four")
+  | 5 -> dump("five")
+  | n -> dump("greater than five")

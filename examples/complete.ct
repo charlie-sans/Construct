@@ -1,0 +1,4 @@
+dump(42)
+dump(3.14159)
+dump(true)
+dump("Hello, World!")

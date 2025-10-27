@@ -1,0 +1,7 @@
+// Test function definition and calls
+
+fn add(a, b) = a + b
+
+let result = add(3, 7)
+
+dump(result)

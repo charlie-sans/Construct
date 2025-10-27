@@ -1,0 +1,2 @@
+# Test if-expression
+if true then 5 else 3

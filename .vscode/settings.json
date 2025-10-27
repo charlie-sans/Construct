@@ -1,0 +1,7 @@
+{
+    "C_Cpp.default.compileCommands": "/run/media/charlie/the cat storage v2/Construct/builddir/compile_commands.json",
+    "C_Cpp.default.configurationProvider": "mesonbuild.mesonbuild",
+    "files.associations": {
+        "*.inc": "cpp"
+    }
+}

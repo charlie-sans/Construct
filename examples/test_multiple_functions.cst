@@ -1,0 +1,15 @@
+// Test multiple functions
+
+fn add(a, b) = a + b
+
+fn multiply(x, y) = x * y
+
+fn square(n) = multiply(n, n)
+
+let result1 = add(5, 3)
+let result2 = multiply(4, 7)
+let result3 = square(6)
+
+dump(result1)
+dump(result2)
+dump(result3)
