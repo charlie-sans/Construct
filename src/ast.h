@@ -264,6 +264,7 @@ struct Statement {
         FUNCTION_DEF,  // function definition
         TYPE_DEF,      // type alias
         IMPORT,        // import statement
+        INCLUDE,       // include statement
     } kind;
 
     ExprPtr expr;
@@ -275,6 +276,9 @@ struct Statement {
 
     // Import
     std::string module_name;
+    
+    // Include: file paths or patterns (e.g., ["lib/*.ct"], ["*"] for wildcard)
+    std::vector<std::string> include_paths;
 
     int line = 0;
     int column = 0;

@@ -1,0 +1,4 @@
+// examples/test_missing.ct - Test handling of missing files
+include ["lib/nonexistent.ct"]
+
+dump(5)

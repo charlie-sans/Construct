@@ -1,0 +1,7 @@
+# Test list literal compilation
+# This test creates a simple list and verifies it compiles
+
+# Create a simple list
+let nums = [1, 2, 3, 4, 5]
+
+dump(42)

@@ -19,6 +19,7 @@ static std::string tokenTypeToString(TokenType type) {
         case TokenType::KW_LET: return "LET";
         case TokenType::KW_TYPE: return "TYPE";
         case TokenType::KW_IMPORT: return "IMPORT";
+        case TokenType::KW_INCLUDE: return "INCLUDE";
         case TokenType::KW_TRUE: return "TRUE";
         case TokenType::KW_FALSE: return "FALSE";
         case TokenType::KW_FOR: return "FOR";
@@ -207,6 +208,33 @@ StmtPtr Parser::parseStatement() {
         return stmt;
     }
     
+    if (check(TokenType::KW_INCLUDE)) {
+        advance();  // skip 'include'
+        auto stmt = std::make_shared<Statement>(Statement::INCLUDE);
+        
+        // Expect [ for array of file patterns
+        consume(TokenType::LBRACKET, "Expected '[' after include");
+        
+        // Parse file patterns (e.g., "file.ct", "*.ct", "*")
+        while (!check(TokenType::RBRACKET)) {
+            if (check(TokenType::STRING)) {
+                stmt->include_paths.push_back(consume(TokenType::STRING, "").value);
+            } else if (check(TokenType::IDENTIFIER) && peek().value == "*") {
+                stmt->include_paths.push_back("*");
+                advance();
+            } else {
+                throw ParseError("Expected string literal or wildcard in include list");
+            }
+            
+            if (!check(TokenType::RBRACKET)) {
+                consume(TokenType::COMMA, "Expected ',' or ']'");
+            }
+        }
+        consume(TokenType::RBRACKET, "Expected ']' after include paths");
+        
+        return stmt;
+    }
+    
     // Allow expression statements at top level (e.g., dump(x))
     // This enables side-effecting expressions like function calls
     try {
@@ -218,7 +246,7 @@ StmtPtr Parser::parseStatement() {
         // If expression parsing fails, throw a more informative error
         Token cur = peek();
         std::ostringstream oss;
-        oss << "Top-level statement must start with 'let', 'fn', 'type', 'import', or an expression "
+        oss << "Top-level statement must start with 'let', 'fn', 'type', 'import', 'include', or an expression "
             << "at line " << cur.line << ", column " << cur.column 
             << ". Got '" << tokenTypeToString(cur.type) << "'";
         if (!cur.value.empty()) {

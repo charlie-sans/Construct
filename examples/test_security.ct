@@ -1,0 +1,4 @@
+// Test attempting path traversal - this should fail safely
+include ["../../../etc/passwd"]
+
+dump(5)

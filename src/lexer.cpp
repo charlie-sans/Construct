@@ -13,6 +13,7 @@ const std::unordered_map<std::string, TokenType> Lexer::KEYWORDS = {
     {"let", TokenType::KW_LET},
     {"type", TokenType::KW_TYPE},
     {"import", TokenType::KW_IMPORT},
+    {"include", TokenType::KW_INCLUDE},
     {"true", TokenType::KW_TRUE},
     {"false", TokenType::KW_FALSE},
     {"for", TokenType::KW_FOR},

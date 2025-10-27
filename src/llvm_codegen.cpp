@@ -30,6 +30,9 @@ public:
     std::string generateIR(const Program& program);
     bool generateObjectFile(const Program& program, const std::string& filename);
     bool generateExecutable(const Program& program, const std::string& filename);
+    
+    // Get list of modules that were imported
+    const std::vector<std::string>& getImportedModules() const { return imported_modules; }
 
 private:
     std::unique_ptr<LLVMContext> context;
@@ -39,6 +42,9 @@ private:
     // Symbol table for type information
     std::unordered_map<std::string, Value*> symbol_table;
     std::unordered_map<std::string, llvm::Type*> type_table;
+    
+    // Track imported modules for linking
+    std::vector<std::string> imported_modules;
     
     // Helper methods
     llvm::Type* convertType(const TypePtr& type);
@@ -392,6 +398,11 @@ void LLVMCodegen::Impl::codegenStmt(const StmtPtr& stmt) {
             if (stmt->expr && stmt->expr->kind == Expr::LAMBDA) {
                 codegenFunction(stmt->expr, stmt->name);
             }
+            break;
+        
+        case Statement::IMPORT:
+            // Record imported module for linking
+            imported_modules.push_back(stmt->module_name);
             break;
             
         default:
@@ -865,13 +876,164 @@ Value* LLVMCodegen::Impl::codegenCallExpr(const ExprPtr& expr) {
 }
 
 Value* LLVMCodegen::Impl::codegenListLiteral(const ExprPtr& expr) {
-    // TODO: Implement list literals
-    return nullptr;
+    if (!expr || expr->elements.empty()) {
+        // Empty list: allocate a zero-length array
+        // For now, return a null pointer for empty lists
+        return llvm::ConstantPointerNull::get(
+            llvm::PointerType::getUnqual(llvm::Type::getInt32Ty(*context))
+        );
+    }
+    
+    // Evaluate all elements first to determine their types
+    std::vector<Value*> element_values;
+    for (const auto& elem : expr->elements) {
+        auto value = codegenExpr(elem);
+        if (!value) {
+            throw std::runtime_error("Failed to generate code for list element");
+        }
+        element_values.push_back(value);
+    }
+    
+    // Determine the element type (assume all elements have same type - the type of first element)
+    llvm::Type* elem_type = element_values[0]->getType();
+    size_t num_elements = element_values.size();
+    
+    // Allocate memory for the array
+    // List layout: [length(i64)] [element0] [element1] ...
+    llvm::Type* length_type = llvm::Type::getInt64Ty(*context);
+    
+    // Calculate total size: 8 bytes for length + (element_size * num_elements)
+    llvm::Value* elem_size = llvm::ConstantInt::get(
+        llvm::Type::getInt64Ty(*context),
+        module->getDataLayout().getTypeAllocSize(elem_type)
+    );
+    llvm::Value* num_elems = llvm::ConstantInt::get(
+        llvm::Type::getInt64Ty(*context),
+        num_elements
+    );
+    
+    // total_size = 8 + (elem_size * num_elements)
+    llvm::Value* data_size = builder->CreateMul(elem_size, num_elems, "list_data_size");
+    llvm::Value* total_size = builder->CreateAdd(
+        llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), 8),
+        data_size,
+        "list_total_size"
+    );
+    
+    // Call malloc
+    Function* malloc_fn = module->getFunction("malloc");
+    llvm::Value* ptr = builder->CreateCall(malloc_fn, {total_size}, "list_ptr");
+    
+    // Cast to i64* to store length
+    llvm::Value* length_ptr = builder->CreateBitCast(
+        ptr,
+        llvm::PointerType::getUnqual(length_type),
+        "list_length_ptr"
+    );
+    
+    // Store the length
+    builder->CreateStore(
+        llvm::ConstantInt::get(length_type, num_elements),
+        length_ptr
+    );
+    
+    // Cast to element pointer type to store data
+    llvm::Value* data_ptr = builder->CreateBitCast(
+        builder->CreateGEP(
+            length_type,
+            ptr,
+            {llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), 1)},
+            "list_data_start"
+        ),
+        llvm::PointerType::getUnqual(elem_type),
+        "list_data_ptr"
+    );
+    
+    // Store each element
+    for (size_t i = 0; i < num_elements; ++i) {
+        llvm::Value* elem_ptr = builder->CreateGEP(
+            elem_type,
+            data_ptr,
+            {llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), i)},
+            "elem_ptr"
+        );
+        builder->CreateStore(element_values[i], elem_ptr);
+    }
+    
+    // Return the list pointer (cast to void*)
+    return builder->CreateBitCast(
+        ptr,
+        llvm::PointerType::getUnqual(llvm::Type::getInt8Ty(*context)),
+        "list_result"
+    );
 }
 
 Value* LLVMCodegen::Impl::codegenRecordLiteral(const ExprPtr& expr) {
-    // TODO: Implement record literals
-    return nullptr;
+    if (!expr || expr->record_fields.empty()) {
+        // Empty record: allocate a minimal struct
+        return llvm::ConstantPointerNull::get(
+            llvm::PointerType::getUnqual(llvm::Type::getInt8Ty(*context))
+        );
+    }
+    
+    // Evaluate all field expressions
+    std::vector<Value*> field_values;
+    std::vector<llvm::Type*> field_types;
+    std::vector<std::string> field_names;
+    
+    for (const auto& [field_name, field_expr] : expr->record_fields) {
+        auto value = codegenExpr(field_expr);
+        if (!value) {
+            throw std::runtime_error("Failed to generate code for record field: " + field_name);
+        }
+        field_values.push_back(value);
+        field_types.push_back(value->getType());
+        field_names.push_back(field_name);
+    }
+    
+    // Create a struct type for this record
+    llvm::StructType* record_type = llvm::StructType::create(*context, field_types);
+    
+    // Allocate memory for the record
+    llvm::Value* record_size = llvm::ConstantInt::get(
+        llvm::Type::getInt64Ty(*context),
+        module->getDataLayout().getTypeAllocSize(record_type)
+    );
+    
+    Function* malloc_fn = module->getFunction("malloc");
+    llvm::Value* record_ptr = builder->CreateCall(malloc_fn, {record_size}, "record_ptr");
+    
+    // Cast to the record struct type
+    llvm::Value* typed_ptr = builder->CreateBitCast(
+        record_ptr,
+        llvm::PointerType::getUnqual(record_type),
+        "typed_record_ptr"
+    );
+    
+    // Store each field value
+    for (size_t i = 0; i < field_values.size(); ++i) {
+        // Create a GEP for each field
+        llvm::Value* field_ptr = builder->CreateGEP(
+            record_type,
+            typed_ptr,
+            {
+                llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0),
+                llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), i)
+            },
+            "field_ptr_" + field_names[i]
+        );
+        
+        // Store the field value
+        builder->CreateStore(field_values[i], field_ptr);
+    }
+    
+    // Store record metadata (field names and count) for runtime access
+    // For now, return a void* to the allocated record
+    return builder->CreateBitCast(
+        record_ptr,
+        llvm::PointerType::getUnqual(llvm::Type::getInt8Ty(*context)),
+        "record_result"
+    );
 }
 
 Function* LLVMCodegen::Impl::codegenFunction(const ExprPtr& func_expr, const std::string& name) {
@@ -1008,6 +1170,10 @@ bool LLVMCodegen::generateObjectFile(const Program& program, const std::string& 
 
 bool LLVMCodegen::generateExecutable(const Program& program, const std::string& filename) {
     return pimpl->generateExecutable(program, filename);
+}
+
+std::vector<std::string> LLVMCodegen::getImportedModules() const {
+    return pimpl->getImportedModules();
 }
 
 }  // namespace construct

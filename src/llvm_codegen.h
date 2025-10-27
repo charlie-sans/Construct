@@ -26,6 +26,9 @@ public:
     
     // Generate executable
     bool generateExecutable(const Program& program, const std::string& filename);
+    
+    // Get list of modules that were imported (for linking)
+    std::vector<std::string> getImportedModules() const;
 
 private:
     // Use void* to hide LLVM types from header

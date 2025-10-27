@@ -1,0 +1,11 @@
+import stdlib
+
+let x = 42
+let y = 3.14
+let b = true
+let s = "Hello, Construct!"
+
+dump(x)
+dump(y)
+dump(b)
+dump(s)

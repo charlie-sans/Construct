@@ -1,0 +1,9 @@
+// examples/test_multiple.ct - Test including multiple specific files
+include ["lib/math.ct", "lib/string_helpers.ct"]
+
+let x = 5
+let y = square(x)
+let z = multiply(y, 2)
+
+dump(y)
+dump(z)

@@ -1,0 +1,18 @@
+# Comprehensive list and record test
+# Tests list and record literal creation and basic usage
+
+# Function to demonstrate lists
+fn test_list_fn(x) = x + 100
+
+# Function to demonstrate records  
+fn test_record_fn(y) = y + 200
+
+# Main tests - create a list
+let my_list = [10, 20, 30, 40, 50]
+
+# Create a record  
+let my_record = {x: 5, y: 15}
+
+# Test functions with the created collections
+test_list_fn(10)
+test_record_fn(20)

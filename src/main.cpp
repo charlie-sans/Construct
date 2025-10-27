@@ -2,6 +2,7 @@
 #include "parser.h"
 #include "compiler.h"
 #include "clang_compiler.h"
+#include "file_includer.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -144,10 +145,76 @@ int main(int argc, char* argv[]) {
         Program program = parser.parse();
         std::cout << "  Parsed " << program.statements.size() << " statements" << std::endl;
         
+        // Process include directives
+        std::cout << "Processing includes..." << std::endl;
+        FileIncluder includer;
+        
+        // Configure include paths
+        std::string input_dir = fs::path(input_file).parent_path().string();
+        if (input_dir.empty()) input_dir = ".";
+        
+        // Set up include path search order
+        std::vector<std::string> include_paths;
+        
+        // First, add the directory where the compiler executable is located
+        std::string compiler_dir = fs::path(argv[0]).parent_path().string();
+        if (compiler_dir.empty()) compiler_dir = ".";
+        include_paths.push_back(compiler_dir);                 // Compiler's directory
+        
+        include_paths.push_back(input_dir);                    // Current file's directory
+        include_paths.push_back(fs::path(input_dir) / "lib");  // lib subdirectory
+        include_paths.push_back(".");                          // Current working directory
+        
+        try {
+            includer.setIncludePaths(include_paths);
+        } catch (const std::exception& e) {
+            std::cerr << "Warning: Failed to set include paths: " << e.what() << std::endl;
+        }
+        
+        Program final_program = program;
+        
+        // Find and process all INCLUDE statements
+        std::vector<Program> included_programs;
+        std::vector<StmtPtr> processed_stmts;
+        
+        for (const auto& stmt : program.statements) {
+            if (stmt->kind == Statement::INCLUDE) {
+                try {
+                    // Get base directory from input file
+                    std::string base_dir = fs::path(input_file).parent_path().string();
+                    if (base_dir.empty()) base_dir = ".";
+                    
+                    // Resolve include paths
+                    auto files = includer.resolveFiles(stmt->include_paths, base_dir);
+                    std::cout << "  Including " << files.size() << " file(s)" << std::endl;
+                    
+                    // Read and parse each included file
+                    for (const auto& file : files) {
+                        std::cout << "    - " << file << std::endl;
+                        Program included = includer.readAndParseFile(file);
+                        included_programs.push_back(included);
+                    }
+                } catch (const std::exception& e) {
+                    std::cerr << "Warning: Include failed - " << e.what() << std::endl;
+                }
+            } else {
+                // Keep non-include statements
+                processed_stmts.push_back(stmt);
+            }
+        }
+        
+        // Merge included programs with the main program
+        if (!included_programs.empty()) {
+            final_program.statements = processed_stmts;
+            final_program = includer.mergePrograms(final_program, included_programs);
+            std::cout << "  Merged " << included_programs.size() << " program(s) - total statements: " 
+                      << final_program.statements.size() << std::endl;
+        }
+        
         // Compile to LLVM IR
         std::cout << "Compiling to LLVM IR..." << std::endl;
         Compiler compiler;
-        std::string ir_code = compiler.compileToIR(program);
+        std::string ir_code = compiler.compileToIR(final_program);
         
         // Print IR if verbose
         if (verbose) {

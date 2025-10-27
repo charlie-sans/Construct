@@ -36,6 +36,9 @@ public:
     // Get all available stdlib functions
     std::vector<StdlibFunction> getStdlibFunctions() const;
     
+    // Get list of imported modules from the compiled program
+    std::vector<std::string> getImportedModules() const;
+    
 private:
     std::unique_ptr<LLVMCodegen> llvm_codegen;
     

@@ -26,6 +26,7 @@ sources = [
     'src/compiler.cpp',
     'src/llvm_codegen.cpp',
     'src/clang_compiler.cpp',
+    'src/file_includer.cpp',
 ]
 
 # Header files (for dependency tracking)

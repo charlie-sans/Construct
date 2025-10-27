@@ -1,0 +1,9 @@
+// examples/test_include.ct - Test file that uses include
+include ["lib/math.ct"]
+
+let x = 5
+let y = square(x)
+let z = add(x, 10)
+
+dump(y)
+dump(z)

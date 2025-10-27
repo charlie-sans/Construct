@@ -1,0 +1,8 @@
+# Test record literal compilation
+# This test creates a simple record and verifies it compiles
+
+# Create a record with x and y fields
+let point = {x: 10, y: 20}
+
+# Output to verify compilation
+dump(42)

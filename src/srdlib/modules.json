@@ -1,0 +1,27 @@
+{
+  "modules": {
+    "stdlib": {
+      "description": "Standard library for Construct",
+      "library": "libconstruct_stdlib.a",
+      "path": "build/libconstruct_stdlib.a",
+      "functions": [
+        "construct_dump_int",
+        "construct_dump_float",
+        "construct_dump_bool",
+        "construct_dump_string"
+      ]
+    },
+    "io": {
+      "description": "I/O functions",
+      "library": "libconstruct_io.a",
+      "path": "build/libconstruct_io.a",
+      "note": "Future: I/O module"
+    },
+    "math": {
+      "description": "Mathematical functions",
+      "library": "libconstruct_math.a",
+      "path": "build/libconstruct_math.a",
+      "note": "Future: Math module"
+    }
+  }
+}

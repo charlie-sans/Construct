@@ -28,6 +28,7 @@ enum class TokenType {
     KW_LET,
     KW_TYPE,
     KW_IMPORT,
+    KW_INCLUDE,
     KW_TRUE,
     KW_FALSE,
     KW_FOR,

@@ -167,4 +167,8 @@ std::string Compiler::getStdlibAsJSON() const {
     return ss.str();
 }
 
+std::vector<std::string> Compiler::getImportedModules() const {
+    return llvm_codegen->getImportedModules();
+}
+
 }  // namespace construct

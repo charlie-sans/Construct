@@ -1,0 +1,7 @@
+// examples/test_wildcard.ct - Test wildcard inclusion
+include ["lib/*.ct"]
+
+let x = 5
+let y = square(x)
+
+dump(y)

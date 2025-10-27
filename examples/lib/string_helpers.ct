@@ -1,0 +1,3 @@
+// lib/string_helpers.ct - String utilities
+let concat = fn(a: String, b: String) -> a + b
+let repeat_str = fn(s: String, n: Int) -> s + s
