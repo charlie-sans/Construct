@@ -12,7 +12,7 @@ namespace construct {
  */
 class ClangCompiler {
 public:
-    ClangCompiler();
+    ClangCompiler(const std::string& compiler_path = "");
     ~ClangCompiler();
     
     /**
@@ -63,6 +63,7 @@ public:
 private:
     std::string last_error;
     bool keep_temps = false;
+    std::string compiler_dir;
     
     // Helper methods
     std::string createTemporaryFile(const std::string& suffix);

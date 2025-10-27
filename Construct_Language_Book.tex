@@ -1,0 +1,1263 @@
+\documentclass[11pt,twoside,openright]{book}
+\usepackage[margin=1in]{geometry}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{tikz}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{syntax}
+\usepackage{setspace}
+
+% Define colors for syntax highlighting
+\definecolor{codeblue}{rgb}{0.0, 0.3, 0.6}
+\definecolor{codegreen}{rgb}{0.0, 0.6, 0.0}
+\definecolor{codegray}{rgb}{0.5, 0.5, 0.5}
+\definecolor{codepurple}{rgb}{0.58, 0.0, 0.82}
+\definecolor{codecrimson}{rgb}{0.86, 0.08, 0.24}
+\definecolor{codelightgray}{rgb}{0.95, 0.95, 0.95}
+
+% Configure listings
+\lstdefinelanguage{ConstructLang}{
+  keywords={let,fn,if,then,else,match,type,import,include,true,false},
+  keywordstyle=\color{codeblue}\bfseries,
+  ndkeywords={Int,Float,Bool,String,List},
+  ndkeywordstyle=\color{codepurple},
+  identifierstyle=\color{black},
+  sensitive=true,
+  comment=[l]{\#},
+  commentstyle=\color{codegreen}\ttfamily,
+  morecomment=[s]{/*}{*/},
+  stringstyle=\color{codecrimson},
+  breaklines=true,
+  breakatwhitespace=false,
+  tabsize=2,
+  showstringspaces=false,
+}
+
+\lstset{
+  language=ConstructLang,
+  backgroundcolor=\color{codelightgray},
+  basicstyle=\small\ttfamily,
+  numbers=left,
+  numberstyle=\tiny\color{codegray},
+  numbersep=5pt,
+  framexleftmargin=10pt,
+  frame=tlrb,
+  rulecolor=\color{codegray},
+  captionpos=b,
+  xleftmargin=15pt,
+}
+
+% Set up page style
+\pagestyle{fancy}
+\setlength{\headheight}{14pt}
+\fancyhf{}
+\fancyhead[LE,RO]{\thepage}
+\fancyhead[RE]{\textit{\leftmark}}
+\fancyhead[LO]{\textit{\rightmark}}
+\renewcommand{\headrulewidth}{0.5pt}
+
+% Title and author
+\title{\Huge \textbf{The Construct Programming Language}\\
+        \Large A Comprehensive Guide to Writing Functional Programs}
+\author{\Large Charlie Santana}
+\date{\Large October 28, 2025}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=codeblue,
+  filecolor=magenta,
+  urlcolor=codeblue,
+}
+
+\begin{document}
+
+\frontmatter
+\maketitle
+
+\chapter*{Preface}
+
+Welcome to \textbf{Construct}, a functional programming language that brings together the elegance of functional paradigms with practical usability. This book serves as a comprehensive guide to writing, understanding, and mastering the Construct language.
+
+Construct is a statically-typed, functional language that compiles to LLVM IR and produces native binaries. It combines the power of languages like Haskell and ML with syntax that is approachable and expressive.
+
+Whether you're new to functional programming or an experienced developer exploring new paradigms, this guide will take you through:
+
+\begin{itemize}
+    \item The fundamentals of Construct syntax
+    \item Control flow and expressions
+    \item Functions and lambdas
+    \item Type system and type annotations
+    \item Standard library and built-in functions
+    \item Practical examples and patterns
+    \item Advanced features and techniques
+\end{itemize}
+
+\section*{How to Use This Book}
+
+This book is organized to support multiple reading approaches:
+
+\begin{itemize}
+    \item \textbf{Sequential}: Read from beginning to end for a complete introduction
+    \item \textbf{By Topic}: Jump to chapters covering specific features
+    \item \textbf{Reference}: Use the index to quickly find syntax and functions
+    \item \textbf{Examples}: Study the code examples to learn through practice
+\end{itemize}
+
+\section*{Prerequisites}
+
+This book assumes:
+
+\begin{itemize}
+    \item Basic familiarity with programming concepts (variables, functions, control flow)
+    \item Comfort with reading code examples
+    \item Access to a Construct compiler (installation instructions in Appendix A)
+\end{itemize}
+
+Experience with functional programming is helpful but not required.
+
+\newpage
+\tableofcontents
+
+\mainmatter
+
+\chapter{Introduction to Construct}
+
+\section{What is Construct?}
+
+Construct is a \textbf{statically-typed functional programming language} designed to be:
+
+\begin{description}
+    \item[Functional] Everything is an expression; immutability by default
+    \item[Practical] Accessible syntax without sacrificing power
+    \item[Safe] Static typing prevents entire classes of errors
+    \item[Fast] Compiles to native code via LLVM
+    \item[Expressive] Pattern matching, type inference, and first-class functions
+\end{description}
+
+\section{Design Philosophy}
+
+Construct is built on these core principles:
+
+\begin{enumerate}
+    \item \textbf{Expressions over Statements}: Programs are composed of expressions that return values
+    \item \textbf{Immutability by Default}: Values don't change; new values are created instead
+    \item \textbf{Type Safety}: Static types catch errors at compile-time
+    \item \textbf{Composition}: Functions are first-class and can be combined easily
+    \item \textbf{Clarity}: Syntax should be readable and intention-revealing
+\end{enumerate}
+
+\section{A First Program}
+
+Let's look at the simplest program in Construct:
+
+\begin{lstlisting}[language=ConstructLang]
+5 + 3
+\end{lstlisting}
+
+This program outputs the result: \texttt{8}
+
+Here's something more interactive:
+
+\begin{lstlisting}[language=ConstructLang]
+let x: Int = 42
+showln("The answer is ", x)
+\end{lstlisting}
+
+This program:
+\begin{enumerate}
+    \item Binds the value \texttt{42} to the name \texttt{x}
+    \item Prints ``The answer is 42'' followed by a newline
+\end{enumerate}
+
+\section{Running Construct Programs}
+
+To compile and run a Construct program:
+
+\begin{lstlisting}[language=bash]
+# Compile to LLVM IR
+construct myprogram.ct
+
+# Compile to native binary
+construct myprogram.ct -c
+clang++ -o myprogram myprogram.o ./libconstruct_stdlib.so -lm
+
+# Run the binary
+./myprogram
+\end{lstlisting}
+
+\chapter{Syntax Fundamentals}
+
+\section{Tokens and Literals}
+
+\subsection{Integers}
+
+Integer literals are whole numbers:
+
+\begin{lstlisting}[language=ConstructLang]
+42
+0
+-100
+1000000
+\end{lstlisting}
+
+\subsection{Floating-Point Numbers}
+
+Floating-point literals include a decimal point:
+
+\begin{lstlisting}[language=ConstructLang]
+3.14
+-2.5
+0.0
+1e6
+\end{lstlisting}
+
+\subsection{Strings}
+
+String literals are enclosed in double quotes:
+
+\begin{lstlisting}[language=ConstructLang]
+"Hello, Construct!"
+"Line 1\nLine 2"
+""
+\end{lstlisting}
+
+\subsection{Booleans}
+
+Boolean values are \texttt{true} or \texttt{false}:
+
+\begin{lstlisting}[language=ConstructLang]
+true
+false
+\end{lstlisting}
+
+\section{Comments}
+
+Single-line comments start with \texttt{\#}:
+
+\begin{lstlisting}[language=ConstructLang]
+# This is a comment
+let x = 5  # Inline comment
+\end{lstlisting}
+
+Multi-line comments are enclosed in \texttt{/* */}:
+
+\begin{lstlisting}[language=ConstructLang]
+/*
+  This is a multi-line comment
+  It can span many lines
+*/
+let y = 10
+\end{lstlisting}
+
+\section{Indentation}
+
+Construct uses Python-style indentation to define code blocks. Indentation is \textbf{significant}:
+
+\begin{lstlisting}[language=ConstructLang]
+let x = 1
+let y = 2
+showln(x + y)
+\end{lstlisting}
+
+Indentation increases inside function bodies, match expressions, and other blocks. Improper indentation results in syntax errors.
+
+\section{Math Functions}
+
+\begin{center}
+\begin{tabular}{|c|c|l|}
+\hline
+\textbf{Operator} & \textbf{Name} & \textbf{Example} \\
+\hline
+\texttt{+} & Addition & \texttt{5 + 3} \\
+\texttt{-} & Subtraction & \texttt{10 - 4} \\
+\texttt{*} & Multiplication & \texttt{6 * 7} \\
+\texttt{/} & Division & \texttt{20 / 4} \\
+\texttt{\%} & Modulo & \texttt{17 \% 5} \\
+\texttt{**} & Power & \texttt{2 ** 8} \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Comparison Operators}
+
+\begin{center}
+\begin{tabular}{|c|c|l|}
+\hline
+\textbf{Operator} & \textbf{Meaning} & \textbf{Example} \\
+\hline
+\texttt{==} & Equal to & \texttt{5 == 5} \\
+\texttt{!=} & Not equal to & \texttt{5 != 3} \\
+\texttt{<} & Less than & \texttt{3 < 5} \\
+\texttt{<=} & Less or equal & \texttt{5 <= 5} \\
+\texttt{>} & Greater than & \texttt{5 > 3} \\
+\texttt{>=} & Greater or equal & \texttt{5 >= 5} \\
+\hline
+\end{tabular}
+\end{center}
+
+\section{Logical Operators}
+
+\begin{center}
+\begin{tabular}{|c|c|l|}
+\hline
+\textbf{Operator} & \textbf{Meaning} & \textbf{Example} \\
+\hline
+\texttt{\&\&} & Logical AND & \texttt{true \&\& false} \\
+\texttt{||} & Logical OR & \texttt{true || false} \\
+\texttt{!} & Logical NOT & \texttt{!true} \\
+\hline
+\end{tabular}
+\end{center}
+
+\section{String Concatenation}
+
+The \texttt{+} operator concatenates strings:
+
+\begin{lstlisting}[language=ConstructLang]
+"Hello" + " " + "World"
+"Numbers: " + toStr(42)
+\end{lstlisting}
+
+\section{Operator Precedence}
+
+Operators are evaluated in this order (highest to lowest precedence):
+
+\begin{enumerate}
+    \item Power (\texttt{**})
+    \item Multiplication, Division, Modulo (\texttt{*}, \texttt{/}, \texttt{\%})
+    \item Addition, Subtraction (\texttt{+}, \texttt{-})
+    \item Comparison (\texttt{<}, \texttt{<=}, \texttt{>}, \texttt{>=})
+    \item Equality (\texttt{==}, \texttt{!=})
+    \item Logical AND (\texttt{\&\&})
+    \item Logical OR (\texttt{||})
+\end{enumerate}
+
+Use parentheses to override precedence:
+
+\begin{lstlisting}[language=ConstructLang]
+2 + 3 * 4      # Evaluates to 14
+(2 + 3) * 4    # Evaluates to 20
+\end{lstlisting}
+
+\chapter{Variables and Types}
+
+\section{Variable Binding}
+
+Variables are bound using \texttt{let}:
+
+\begin{lstlisting}[language=ConstructLang]
+let x = 5
+let name = "Alice"
+let pi = 3.14159
+\end{lstlisting}
+
+Variables in Construct are \textbf{immutable}. Once bound, their value cannot change:
+
+\begin{lstlisting}[language=ConstructLang]
+let x = 10
+let x = 20  # Error: x is already defined
+\end{lstlisting}
+
+\section{Type Annotations}
+
+You can explicitly annotate types. Types include:
+
+\begin{itemize}
+    \item \texttt{Int}: 32-bit integers
+    \item \texttt{Float}: 64-bit floating-point numbers
+    \item \texttt{Bool}: Boolean values
+    \item \texttt{String}: Text strings
+    \item Function types: \texttt{Int -> Int}
+\end{itemize}
+
+\subsection{Basic Type Annotations}
+
+\begin{lstlisting}[language=ConstructLang]
+let x: Int = 42
+let y: Float = 3.14
+let name: String = "Bob"
+let flag: Bool = true
+\end{lstlisting}
+
+\subsection{Function Type Annotations}
+
+Function types are written with arrows:
+
+\begin{lstlisting}[language=ConstructLang]
+# A function that takes an Int and returns an Int
+double: Int -> Int = fn (x: Int) -> x * 2
+
+# A function that takes two Ints and returns an Int
+add: Int -> Int -> Int = fn (a: Int) -> fn (b: Int) -> a + b
+\end{lstlisting}
+
+\section{Type Inference}
+
+Construct can infer types from context. These are equivalent:
+
+\begin{lstlisting}[language=ConstructLang]
+let x = 5           # Type inferred as Int
+let x: Int = 5      # Type explicitly annotated
+\end{lstlisting}
+
+Type inference works through:
+
+\begin{itemize}
+    \item Literal types (\texttt{5} is Int, \texttt{3.14} is Float)
+    \item Function return types
+    \item Context from operations
+\end{itemize}
+
+However, explicit type annotations are recommended for clarity and error detection.
+
+\chapter{Control Flow}
+
+\section{If-Then-Else Expressions}
+
+The \texttt{if-then-else} expression evaluates a condition and returns one of two values:
+
+\begin{lstlisting}[language=ConstructLang]
+if x > 0 then "positive" else "negative"
+\end{lstlisting}
+
+The \texttt{else} clause is required. Both branches must return the same type:
+
+\begin{lstlisting}[language=ConstructLang]
+let result: String =
+  if age >= 18
+    then "adult"
+    else "minor"
+\end{lstlisting}
+
+If-expressions can be nested:
+
+\begin{lstlisting}[language=ConstructLang]
+let category: String =
+  if x > 0
+    then
+      if x < 10
+        then "small"
+        else "large"
+    else "negative"
+\end{lstlisting}
+
+\section{Match Expressions}
+
+Pattern matching with \texttt{match} provides powerful destructuring:
+
+\begin{lstlisting}[language=ConstructLang]
+let desc: String =
+  match value:
+    | 0 -> "zero"
+    | 1 -> "one"
+    | _ -> "other"
+\end{lstlisting}
+
+The underscore \texttt{\_} matches anything:
+
+\begin{lstlisting}[language=ConstructLang]
+let status: String =
+  match code:
+    | 200 -> "success"
+    | 404 -> "not found"
+    | 500 -> "server error"
+    | _   -> "unknown"
+\end{lstlisting}
+
+\chapter{Functions}
+
+\section{Defining Functions}
+
+Functions are defined with \texttt{fn}. The lambda syntax is most common:
+
+\begin{lstlisting}[language=ConstructLang]
+# Single parameter
+square: Int -> Int = fn (x: Int) -> x * x
+
+# Multiple parameters (curried)
+add: Int -> Int -> Int = fn (a: Int) -> fn (b: Int) -> a + b
+\end{lstlisting}
+
+\section{Function Application}
+
+Call functions by name with arguments:
+
+\begin{lstlisting}[language=ConstructLang]
+let result = square(5)        # result = 25
+let sum = add(3)(4)           # sum = 7
+
+# Or use pipe syntax (discussed later)
+let sum2 = 3 |> add(4)        # sum2 = 7
+\end{lstlisting}
+
+\section{Anonymous Functions}
+
+Create functions without names:
+
+\begin{lstlisting}[language=ConstructLang]
+fn (x: Int) -> x * 2
+fn (a: Int) -> fn (b: Int) -> a + b
+\end{lstlisting}
+
+\section{Function Composition}
+
+Functions can return other functions (higher-order functions):
+
+\begin{lstlisting}[language=ConstructLang]
+# make_multiplier creates a multiplier function
+make_multiplier: Int -> (Int -> Int) =
+  fn (factor: Int) -> fn (x: Int) -> x * factor
+
+# Use it to create specific multipliers
+times_two = make_multiplier(2)
+times_three = make_multiplier(3)
+
+let result1 = times_two(10)    # result1 = 20
+let result2 = times_three(10)  # result2 = 30
+\end{lstlisting}
+
+\chapter{Input and Output}
+
+\section{Output Functions}
+
+\subsection{show() - Output Without Newline}
+
+Output one or more values without a trailing newline:
+
+\begin{lstlisting}[language=ConstructLang]
+show("Hello ")
+show("World")
+\end{lstlisting}
+
+\subsection{showln() - Output With Newline}
+
+Output one or more values with a trailing newline:
+
+\begin{lstlisting}[language=ConstructLang]
+showln("Hello, Construct!")
+showln("Numbers: ", 1, 2, 3)
+\end{lstlisting}
+
+The \texttt{show()} and \texttt{showln()} functions work with any type:
+
+\begin{lstlisting}[language=ConstructLang]
+let x: Int = 42
+let y: Float = 3.14
+let name: String = "Alice"
+
+showln("Integer: ", x)
+showln("Float: ", y)
+showln("String: ", name)
+showln("Boolean: ", true)
+\end{lstlisting}
+
+\subsection{Variadic Output}
+
+Both \texttt{show()} and \texttt{showln()} support multiple arguments:
+
+\begin{lstlisting}[language=ConstructLang]
+show("A", "B", "C")            # ABC
+showln("ID: ", 123, " Status: ", "active")
+# Outputs: ID: 123 Status: active
+\end{lstlisting}
+
+\section{Input Functions}
+
+\subsection{input() - Read Input With Prompt}
+
+Read a line of input with an optional prompt:
+
+\begin{lstlisting}[language=ConstructLang]
+let name: String = input("Enter your name: ")
+showln("Hello, ", name)
+\end{lstlisting}
+
+The prompt is displayed immediately before the input is read.
+
+\subsection{Advanced Input}
+
+Convert input to other types:
+
+\begin{lstlisting}[language=ConstructLang]
+let age_str: String = input("Enter your age: ")
+let age: Int = toInt(age_str)
+showln("You are ", age, " years old")
+\end{lstlisting}
+
+\chapter{Standard Library}
+
+\section{String Functions}
+
+\subsection{len() - String Length}
+
+Get the number of characters in a string:
+
+\begin{lstlisting}[language=ConstructLang]
+let text: String = "Hello"
+let length: Int = len(text)    # length = 5
+\end{lstlisting}
+
+\subsection{concat() - Concatenate Strings}
+
+Join two strings:
+
+\begin{lstlisting}[language=ConstructLang]
+let greeting: String = concat("Hello", " World")
+# greeting = "Hello World"
+\end{lstlisting}
+
+Alternatively, use the \texttt{+} operator:
+
+\begin{lstlisting}[language=ConstructLang]
+let greeting: String = "Hello" + " " + "World"
+\end{lstlisting}
+
+\subsection{upper() - Convert to Uppercase}
+
+Convert a string to uppercase:
+
+\begin{lstlisting}[language=ConstructLang]
+let text: String = "hello"
+let upper_text: String = upper(text)   # "HELLO"
+\end{lstlisting}
+
+\subsection{lower() - Convert to Lowercase}
+
+Convert a string to lowercase:
+
+\begin{lstlisting}[language=ConstructLang]
+let text: String = "HELLO"
+let lower_text: String = lower(text)   # "hello"
+\end{lstlisting}
+
+\subsection{trim() - Remove Whitespace}
+
+Remove leading and trailing whitespace:
+
+\begin{lstlisting}[language=ConstructLang]
+let text: String = "  hello  "
+let trimmed: String = trim(text)       # "hello"
+\end{lstlisting}
+
+\subsection{eq() - Test String Equality}
+
+Test if two strings are equal:
+
+\begin{lstlisting}[language=ConstructLang]
+let result: Bool = eq("hello", "hello")   # true
+let result2: Bool = eq("hello", "HELLO")  # false
+\end{lstlisting}
+
+\subsection{starts\_with() - Check Prefix}
+
+Test if a string starts with another:
+
+\begin{lstlisting}[language=ConstructLang]
+let result: Bool = starts_with("hello", "hel")   # true
+let result2: Bool = starts_with("hello", "bye")  # false
+\end{lstlisting}
+
+\subsection{ends\_with() - Check Suffix}
+
+Test if a string ends with another:
+
+\begin{lstlisting}[language=ConstructLang]
+let result: Bool = ends_with("hello", "lo")   # true
+let result2: Bool = ends_with("hello", "he")  # false
+\end{lstlisting}
+
+\section{Type Conversion Functions}
+
+\subsection{toStr() - Convert to String}
+
+Convert any value to a string:
+
+\begin{lstlisting}[language=ConstructLang]
+let s1: String = toStr(42)          # "42"
+let s2: String = toStr(3.14)        # "3.14"
+let s3: String = toStr(true)        # "true"
+\end{lstlisting}
+
+\subsection{toInt() - Convert to Integer}
+
+Parse a string as an integer:
+
+\begin{lstlisting}[language=ConstructLang]
+let n: Int = toInt("42")            # 42
+let n2: Int = toInt("123")          # 123
+\end{lstlisting}
+
+\subsection{toFloat() - Convert to Float}
+
+Parse a string as a float:
+
+\begin{lstlisting}[language=ConstructLang]
+let f: Float = toFloat("3.14")      # 3.14
+let f2: Float = toFloat("2.5")      # 2.5
+\end{lstlisting}
+
+\subsection{toBool() - Convert to Boolean}
+
+Parse a string as a boolean:
+
+\begin{lstlisting}[language=ConstructLang]
+let b: Bool = toBool("true")        # true
+let b2: Bool = toBool("false")      # false
+\end{lstlisting}
+
+\section{Math Functions}
+
+\subsection{abs() - Absolute Value}
+
+Get the absolute value:
+
+\begin{lstlisting}[language=ConstructLang]
+let x: Int = abs(-42)               # 42
+let y: Float = abs(-3.14)           # 3.14
+\end{lstlisting}
+
+\subsection{max() - Maximum}
+
+Get the maximum of two values:
+
+\begin{lstlisting}[language=ConstructLang]
+let m1: Int = max(10, 20)           # 20
+let m2: Float = max(3.14, 2.71)     # 3.14
+\end{lstlisting}
+
+\subsection{min() - Minimum}
+
+Get the minimum of two values:
+
+\begin{lstlisting}[language=ConstructLang]
+let m1: Int = min(10, 20)           # 10
+let m2: Float = min(3.14, 2.71)     # 2.71
+\end{lstlisting}
+
+\subsection{clamp() - Constrain to Range}
+
+Constrain a value within a range:
+
+\begin{lstlisting}[language=ConstructLang]
+let c1: Int = clamp(5, 0, 10)       # 5
+let c2: Int = clamp(-5, 0, 10)      # 0
+let c3: Int = clamp(15, 0, 10)      # 10
+\end{lstlisting}
+
+\subsection{round() - Round to Integer}
+
+Round a float to the nearest integer:
+
+\begin{lstlisting}[language=ConstructLang]
+let r1: Int = round(3.2)            # 3
+let r2: Int = round(3.7)            # 4
+\end{lstlisting}
+
+\subsection{floor() - Round Down}
+
+Round down to the nearest integer:
+
+\begin{lstlisting}[language=ConstructLang]
+let f1: Int = floor(3.7)            # 3
+let f2: Int = floor(3.2)            # 3
+\end{lstlisting}
+
+\subsection{ceil() - Round Up}
+
+Round up to the nearest integer:
+
+\begin{lstlisting}[language=ConstructLang]
+let c1: Int = ceil(3.2)             # 4
+let c2: Int = ceil(3.7)             # 4
+\end{lstlisting}
+
+\section{Utility Functions}
+
+\subsection{nl() - Print Newline}
+
+Print a newline:
+
+\begin{lstlisting}[language=ConstructLang]
+show("Line 1")
+nl()
+show("Line 2")
+\end{lstlisting}
+
+\subsection{sleep() - Pause Execution}
+
+Pause for a number of seconds:
+
+\begin{lstlisting}[language=ConstructLang]
+showln("Waiting...")
+sleep(2)
+showln("Done!")
+\end{lstlisting}
+
+\subsection{clear\_screen() - Clear Terminal}
+
+Clear the terminal screen:
+
+\begin{lstlisting}[language=ConstructLang]
+clear_screen()
+showln("Fresh start")
+\end{lstlisting}
+
+\chapter{Practical Examples}
+
+\section{Example 1: Hello, Name}
+
+A program that greets the user:
+
+\begin{lstlisting}[language=ConstructLang]
+let name: String = input("What's your name? ")
+showln("Hello, ", name, "!")
+\end{lstlisting}
+
+\section{Example 2: Sum of Numbers}
+
+Calculate the sum of user-entered numbers:
+
+\begin{lstlisting}[language=ConstructLang]
+let a_str: String = input("Enter first number: ")
+let b_str: String = input("Enter second number: ")
+
+let a: Int = toInt(a_str)
+let b: Int = toInt(b_str)
+
+let sum: Int = a + b
+
+showln("The sum is: ", sum)
+\end{lstlisting}
+
+\section{Example 3: Factorial}
+
+Calculate factorial using recursion:
+
+\begin{lstlisting}[language=ConstructLang]
+fn factorial(n: Int): Int {
+  if n <= 1
+    then 1
+    else n * factorial(n - 1)
+}
+
+let n: Int = 5
+let result: Int = factorial(n)
+showln(n, "! = ", result)
+\end{lstlisting}
+
+\section{Example 4: String Processing}
+
+Process and display string information:
+
+\begin{lstlisting}[language=ConstructLang]
+let text: String = input("Enter some text: ")
+
+showln("Original: ", text)
+showln("Length: ", len(text))
+showln("Uppercase: ", upper(text))
+showln("Lowercase: ", lower(text))
+\end{lstlisting}
+
+\section{Example 5: Simple Calculator}
+
+A basic calculator program:
+
+\begin{lstlisting}[language=ConstructLang]
+let num1_str: String = input("First number: ")
+let operator: String = input("Operator (+, -, *, /): ")
+let num2_str: String = input("Second number: ")
+
+let num1: Int = toInt(num1_str)
+let num2: Int = toInt(num2_str)
+
+let result: Int =
+  if operator == "+"
+    then num1 + num2
+  else if operator == "-"
+    then num1 - num2
+  else if operator == "*"
+    then num1 * num2
+  else if operator == "/"
+    then num1 / num2
+  else 0
+
+showln("Result: ", result)
+\end{lstlisting}
+
+\chapter{Advanced Features}
+
+\section{Higher-Order Functions}
+
+Functions that take or return other functions enable powerful abstractions:
+
+\begin{lstlisting}[language=ConstructLang]
+# A function that applies a function to a value twice
+apply_twice: (Int -> Int) -> Int -> Int =
+  fn (f: Int -> Int) -> fn (x: Int) -> f(f(x))
+
+# Create a function that doubles a number
+double: Int -> Int = fn (x: Int) -> x * 2
+
+# Apply double twice to get quadruple
+let quadruple = apply_twice(double)
+let result = quadruple(5)      # result = 20
+\end{lstlisting}
+
+\section{Partial Application}
+
+Apply some arguments to a function to create a new function:
+
+\begin{lstlisting}[language=ConstructLang]
+# Original function taking two arguments
+add: Int -> Int -> Int =
+  fn (a: Int) -> fn (b: Int) -> a + b
+
+# Partially apply to create add_five
+add_five: Int -> Int = add(5)
+
+# Use the specialized function
+let result = add_five(10)      # result = 15
+\end{lstlisting}
+
+\section{Function Composition}
+
+Combine multiple functions into one:
+
+\begin{lstlisting}[language=ConstructLang]
+# Define simple functions
+increment: Int -> Int = fn (x: Int) -> x + 1
+double: Int -> Int = fn (x: Int) -> x * 2
+square: Int -> Int = fn (x: Int) -> x * x
+
+# Compose them manually
+let result = square(double(increment(5)))  # (5+1)*2)^2 = 144
+\end{lstlisting}
+
+\chapter{Common Patterns}
+
+\section{Pattern: Map and Filter}
+
+Process collections with higher-order functions:
+
+\begin{lstlisting}[language=ConstructLang]
+# Conceptual: filter values based on a condition
+let numbers: String = "1 2 3 4 5"
+let large: Bool = if value > 2 then true else false
+\end{lstlisting}
+
+\section{Pattern: Recursive Accumulation}
+
+Use recursion to build results:
+
+\begin{lstlisting}[language=ConstructLang]
+fn sum_to(n: Int): Int {
+  if n <= 0
+    then 0
+    else n + sum_to(n - 1)
+}
+
+let result = sum_to(10)     # 55
+\end{lstlisting}
+
+\section{Pattern: Conditional Processing}
+
+Combine if-expressions for powerful control flow:
+
+\begin{lstlisting}[language=ConstructLang]
+let grade: String =
+  if score >= 90
+    then "A"
+  else if score >= 80
+    then "B"
+  else if score >= 70
+    then "C"
+  else if score >= 60
+    then "D"
+  else
+    "F"
+\end{lstlisting}
+
+\chapter{Troubleshooting}
+
+\section{Common Errors}
+
+\subsection{Type Mismatch}
+
+\textbf{Error:} ``Type mismatch: expected Int, got String''
+
+\textbf{Solution:} Use type conversion functions:
+
+\begin{lstlisting}[language=ConstructLang]
+let input_str = input("Enter a number: ")
+let number: Int = toInt(input_str)   # Convert first!
+\end{lstlisting}
+
+\subsection{Undefined Variable}
+
+\textbf{Error:} ``Undefined variable: x''
+
+\textbf{Solution:} Make sure to bind variables before using them:
+
+\begin{lstlisting}[language=ConstructLang]
+let x: Int = 42
+showln(x)          # OK: x is defined
+\end{lstlisting}
+
+\subsection{Indentation Errors}
+
+\textbf{Error:} ``Unexpected token''
+
+\textbf{Solution:} Check indentation (uses spaces, not tabs):
+
+\begin{lstlisting}[language=ConstructLang]
+# Correct: consistent indentation
+if true
+  then showln("yes")
+  else showln("no")
+
+# Wrong: inconsistent indentation
+if true
+then showln("yes")
+  else showln("no")
+\end{lstlisting}
+
+\appendix
+
+\chapter{Installation and Setup}
+
+\section{Building from Source}
+
+\subsection{Prerequisites}
+
+\begin{itemize}
+    \item A C++ compiler (GCC, Clang, or MSVC)
+    \item Meson build system
+    \item LLVM 15 or later
+    \item CMake (optional, for LLVM configuration)
+\end{itemize}
+
+\subsection{Build Steps}
+
+\begin{lstlisting}[language=bash]
+# Clone or download the Construct repository
+cd Construct
+
+# Configure the build
+meson setup build
+
+# Compile
+meson compile -C build
+
+# Install (optional)
+meson install -C build
+\end{lstlisting}
+
+\section{Writing Your First Program}
+
+\subsection{Create a File}
+
+Create \texttt{hello.ct}:
+
+\begin{lstlisting}[language=ConstructLang]
+showln("Hello, Construct!")
+\end{lstlisting}
+
+\subsection{Compile and Run}
+
+\begin{lstlisting}[language=bash]
+# Compile to LLVM IR
+./build/construct hello.ct
+
+# View the generated IR
+cat hello.ll
+
+# Compile to native executable
+./build/construct hello.ct -c
+clang++ -o hello hello.o ./build/libconstruct_stdlib.so -lm
+
+# Run the program
+./hello
+\end{lstlisting}
+
+\chapter{Quick Reference}
+
+\section{Keywords}
+
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Keyword} & \textbf{Purpose} \\
+\hline
+\texttt{let} & Bind a variable \\
+\texttt{fn} & Define a function \\
+\texttt{if} & Conditional expression \\
+\texttt{then} & Then branch of if \\
+\texttt{else} & Else branch of if \\
+\texttt{match} & Pattern matching \\
+\texttt{type} & Type alias \\
+\texttt{import} & Import module \\
+\texttt{true} & Boolean true \\
+\texttt{false} & Boolean false \\
+\hline
+\end{tabular}
+\end{center}
+
+\section{Built-in Types}
+
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Type} & \textbf{Description} \\
+\hline
+\texttt{Int} & 32-bit integer \\
+\texttt{Float} & 64-bit floating point \\
+\texttt{Bool} & Boolean \\
+\texttt{String} & Text string \\
+\hline
+\end{tabular}
+\end{center}
+
+\section{I/O Functions}
+
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Function} & \textbf{Purpose} \\
+\hline
+\texttt{show(...)} & Output without newline \\
+\texttt{showln(...)} & Output with newline \\
+\texttt{input(prompt)} & Read input with prompt \\
+\texttt{nl()} & Print newline \\
+\hline
+\end{tabular}
+\end{center}
+
+\section{String Functions}
+
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Function} & \textbf{Purpose} \\
+\hline
+\texttt{len(s)} & String length \\
+\texttt{concat(a, b)} & Concatenate strings \\
+\texttt{upper(s)} & Convert to uppercase \\
+\texttt{lower(s)} & Convert to lowercase \\
+\texttt{trim(s)} & Remove whitespace \\
+\texttt{eq(a, b)} & Test equality \\
+\texttt{starts\_with(s, p)} & Check prefix \\
+\texttt{ends\_with(s, p)} & Check suffix \\
+\hline
+\end{tabular}
+\end{center}
+
+\section{Math Functions}
+
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Function} & \textbf{Purpose} \\
+\hline
+\texttt{abs(x)} & Absolute value \\
+\texttt{max(a, b)} & Maximum \\
+\texttt{min(a, b)} & Minimum \\
+\texttt{clamp(x, min, max)} & Constrain range \\
+\texttt{round(x)} & Round to nearest \\
+\texttt{floor(x)} & Round down \\
+\texttt{ceil(x)} & Round up \\
+\hline
+\end{tabular}
+\end{center}
+
+\chapter{Solutions to Exercises}
+
+\section{Exercise 1: Temperature Converter}
+
+Convert Fahrenheit to Celsius:
+
+\begin{lstlisting}[language=ConstructLang]
+let f_str: String = input("Enter temperature in F: ")
+let f: Float = toFloat(f_str)
+let c: Float = (f - 32.0) * (5.0 / 9.0)
+showln(toStr(f), "F = ", toStr(c), "C")
+\end{lstlisting}
+
+\section{Exercise 2: Password Validator}
+
+Check if a password is strong:
+
+\begin{lstlisting}[language=ConstructLang]
+let password: String = input("Enter password: ")
+let is_long: Bool = len(password) >= 8
+
+let message: String =
+  if is_long
+    then "Password is strong"
+    else "Password is too short"
+
+showln(message)
+\end{lstlisting}
+
+\section{Exercise 3: Number Guessing Game}
+
+\begin{lstlisting}[language=ConstructLang]
+let secret: Int = 42
+let guess_str: String = input("Guess the number: ")
+let guess: Int = toInt(guess_str)
+
+let message: String =
+  if guess == secret
+    then "Correct!"
+  else if guess < secret
+    then "Too low"
+  else
+    "Too high"
+
+showln(message)
+\end{lstlisting}
+
+\chapter{Resources}
+
+\section{Online References}
+
+\begin{itemize}
+    \item \textbf{Construct GitHub}: \url{https://github.com/charlie-sans/construct}
+    \item \textbf{LLVM Documentation}: \url{https://llvm.org/docs/}
+    \item \textbf{Functional Programming}: \url{https://en.wikipedia.org/wiki/Functional_programming}
+\end{itemize}
+
+\section{Recommended Reading}
+
+\begin{itemize}
+    \item \textit{Composing Software} by Eric Elliott
+    \item \textit{Structure and Interpretation of Computer Programs} by Abelson \& Sussman
+    \item \textit{Learn You a Haskell} by Lipovača
+\end{itemize}
+
+\backmatter
+
+\chapter*{Conclusion}
+
+You now have a comprehensive understanding of the Construct programming language. Whether you're writing simple scripts or complex programs, you have the tools and knowledge to express your ideas clearly and effectively in Construct.
+
+Remember these key principles:
+
+\begin{enumerate}
+    \item \textbf{Everything is an expression}: Think in terms of values and transformations
+    \item \textbf{Functions are first-class}: Combine functions to build powerful abstractions
+    \item \textbf{Types help you}: Use them to catch errors early and clarify intent
+    \item \textbf{Immutability simplifies reasoning}: Avoid state changes when possible
+    \item \textbf{Compose building blocks}: Create complex programs from simple, reusable pieces
+\end{enumerate}
+
+Continue exploring, experimenting, and building. The Construct community is here to support you.
+
+Happy coding!
+
+\end{document}

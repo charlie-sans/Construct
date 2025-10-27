@@ -1,0 +1,12 @@
+show("A", "B", "C")
+showln()
+
+show("Numbers: ", 1, 2, 3)
+showln()
+
+let x: Int = 100
+let y: Float = 2.5
+show("Values: ", x, " and ", y)
+showln()
+
+showln("Complete: ", "test ", 42, " done!")

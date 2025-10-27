@@ -10,8 +10,21 @@
 
 namespace construct {
 
-ClangCompiler::ClangCompiler() : keep_temps(false) {
-    // Initialize compiler
+ClangCompiler::ClangCompiler(const std::string& compiler_path) : keep_temps(false), compiler_dir("") {
+    // Determine compiler directory from the provided path
+    if (!compiler_path.empty()) {
+        try {
+            namespace fs = std::filesystem;
+            fs::path exe_path(compiler_path);
+            if (exe_path.is_relative()) {
+                exe_path = fs::absolute(exe_path);
+            }
+            compiler_dir = exe_path.parent_path().string();
+        } catch (const std::exception& e) {
+            // If there's an error, just leave compiler_dir empty
+            compiler_dir = "";
+        }
+    }
 }
 
 ClangCompiler::~ClangCompiler() = default;
@@ -141,47 +154,66 @@ bool ClangCompiler::compileToExecutable(const std::string& ir_code,
     try {
         std::cout << "Compiling to executable: " << output_file << std::endl;
         
-        // First compile IR to object file
-        std::string obj_file = createTemporaryFile(".o");
-        if (obj_file.empty()) {
+        // Create temp IR file
+        std::string ir_file = createTemporaryFile(".ll");
+        if (ir_file.empty()) {
             return false;
         }
         
-        if (!compileToObjectFile(ir_code, obj_file, optimize_level)) {
-            std::remove(obj_file.c_str());
+        if (!writeToFile(ir_file, ir_code)) {
+            std::remove(ir_file.c_str());
             return false;
         }
         
-        // Build linker command
-        std::stringstream link_cmd;
-        link_cmd << "gcc -o " << output_file << " " << obj_file;
+        // Build clang command to compile IR directly to executable
+        std::stringstream cmd;
+        cmd << "clang";
+        
+        // Add optimization level
+        if (optimize_level > 0) {
+            cmd << " -O" << optimize_level;
+        }
+        
+        // Output file
+        cmd << " -o \"" << output_file << "\"";
+        
+        // Input IR file
+        cmd << " \"" << ir_file << "\"";
         
         // Add stdlib objects (for backward compatibility)
         for (const auto& obj : stdlib_objects) {
-            link_cmd << " " << obj;
+            cmd << " \"" << obj << "\"";
         }
         
         // Link against construct_stdlib shared library
-        link_cmd << " -lconstruct_stdlib";
+        cmd << " -lconstruct_stdlib";
         
         // Add library search paths and runtime library paths
-        link_cmd << " -L./build -Lbuild";
-        link_cmd << " -Wl,-rpath=./build -Wl,-rpath=/usr/local/lib";
+        // First add the compiler's own directory, then fall back to relative paths and system locations
+        if (!compiler_dir.empty()) {
+            cmd << " -L\"" << compiler_dir << "\"";
+        }
+        cmd << " -L./build -Lbuild -L/usr/local/lib";
+        
+        if (!compiler_dir.empty()) {
+            cmd << " -Wl,-rpath=\"" << compiler_dir << "\"";
+        }
+        cmd << " -Wl,-rpath=./build -Wl,-rpath=/usr/local/lib";
         
         // Link with libc
-        link_cmd << " -lc";
+        cmd << " -lc";
         
-        bool success = executeCommand(link_cmd.str());
+        bool success = executeCommand(cmd.str());
         
         // Cleanup
         if (!keep_temps) {
-            std::remove(obj_file.c_str());
+            std::remove(ir_file.c_str());
         }
         
         return success;
         
     } catch (const std::exception& e) {
-        last_error = std::string("Linking error: ") + e.what();
+        last_error = std::string("Compilation error: ") + e.what();
         return false;
     }
 }

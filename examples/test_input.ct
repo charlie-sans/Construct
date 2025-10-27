@@ -1,0 +1,2 @@
+let contents: String = input("meow: ")
+showln("You entered: ", contents)

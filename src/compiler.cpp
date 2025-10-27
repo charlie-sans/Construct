@@ -21,7 +21,7 @@ bool Compiler::compileToExecutable(const Program& program, const std::string& fi
 
 std::vector<StdlibFunction> Compiler::getStdlibFunctions() const {
     return {
-        // Output Functions
+        // ====== Output Functions ======
         {
             "dump",
             "void",
@@ -29,10 +29,16 @@ std::vector<StdlibFunction> Compiler::getStdlibFunctions() const {
             "Output a value to stdout (works with int, float, bool, or string)"
         },
         {
+            "dump_line",
+            "void",
+            {"value"},
+            "Output a value to stdout with newline (works with int, float, bool, or string)"
+        },
+        {
             "print",
             "void",
-            {"fmt", "..."},
-            "Print a formatted string (printf-style)"
+            {"fmt"},
+            "Print a formatted string"
         },
         {
             "nl",
@@ -40,8 +46,52 @@ std::vector<StdlibFunction> Compiler::getStdlibFunctions() const {
             {},
             "Print a newline character"
         },
+        {
+            "print_error",
+            "void",
+            {"msg"},
+            "Print an error message to stderr"
+        },
+        {
+            "debug",
+            "void",
+            {"msg"},
+            "Print a debug message to stderr"
+        },
         
-        // String Functions
+        // ====== Input Functions ======
+        {
+            "read_int",
+            "int",
+            {},
+            "Read an integer from stdin"
+        },
+        {
+            "read_float",
+            "float",
+            {},
+            "Read a floating-point number from stdin"
+        },
+        {
+            "read_string",
+            "string",
+            {},
+            "Read a word (non-whitespace) from stdin"
+        },
+        {
+            "read_line",
+            "string",
+            {},
+            "Read a full line (including spaces) from stdin"
+        },
+        {
+            "read_line_prompt",
+            "string",
+            {"prompt"},
+            "Read a line with a prompt message displayed first"
+        },
+        
+        // ====== String Functions ======
         {
             "len",
             "int",
@@ -61,19 +111,37 @@ std::vector<StdlibFunction> Compiler::getStdlibFunctions() const {
             "Compare two strings for equality"
         },
         {
-            "substr",
+            "upper",
             "string",
-            {"s", "start", "length"},
-            "Extract a substring"
+            {"s"},
+            "Convert string to uppercase"
         },
         {
-            "indexOf",
-            "int",
-            {"s", "char"},
-            "Find the index of a character in a string (returns -1 if not found)"
+            "lower",
+            "string",
+            {"s"},
+            "Convert string to lowercase"
+        },
+        {
+            "trim",
+            "string",
+            {"s"},
+            "Trim whitespace from both ends of string"
+        },
+        {
+            "starts_with",
+            "bool",
+            {"s", "prefix"},
+            "Check if string starts with prefix"
+        },
+        {
+            "ends_with",
+            "bool",
+            {"s", "suffix"},
+            "Check if string ends with suffix"
         },
         
-        // Type Conversion Functions
+        // ====== Type Conversion ======
         {
             "toStr",
             "string",
@@ -99,24 +167,12 @@ std::vector<StdlibFunction> Compiler::getStdlibFunctions() const {
             "Convert a string to a boolean"
         },
         
-        // Math Functions
+        // ====== Math Functions ======
         {
             "abs",
             "number",
             {"x"},
             "Get the absolute value of a number"
-        },
-        {
-            "sqrt",
-            "float",
-            {"x"},
-            "Get the square root of a number"
-        },
-        {
-            "pow",
-            "number",
-            {"base", "exp"},
-            "Raise base to the power of exp"
         },
         {
             "max",
@@ -129,6 +185,56 @@ std::vector<StdlibFunction> Compiler::getStdlibFunctions() const {
             "number",
             {"a", "b"},
             "Return the minimum of two numbers"
+        },
+        {
+            "clamp",
+            "number",
+            {"val", "min", "max"},
+            "Clamp a number between min and max"
+        },
+        {
+            "round",
+            "float",
+            {"x"},
+            "Round a number to the nearest integer"
+        },
+        {
+            "floor",
+            "float",
+            {"x"},
+            "Round down to the nearest integer"
+        },
+        {
+            "ceil",
+            "float",
+            {"x"},
+            "Round up to the nearest integer"
+        },
+        
+        // ====== Utility Functions ======
+        {
+            "sleep",
+            "void",
+            {"seconds"},
+            "Sleep for a number of seconds"
+        },
+        {
+            "sleep_ms",
+            "void",
+            {"milliseconds"},
+            "Sleep for a number of milliseconds"
+        },
+        {
+            "clear_screen",
+            "void",
+            {},
+            "Clear the terminal screen"
+        },
+        {
+            "exit",
+            "void",
+            {"code"},
+            "Exit the program with a status code"
         }
     };
 }

@@ -1,0 +1,127 @@
+// Comprehensive demonstration of enhanced stdlib functions
+
+// ============================================================================
+// Output & Input Example
+// ============================================================================
+
+let dump_test: Int = 42
+dump(dump_test)
+
+let dump_line_test: String = "This line has newline"
+dump_line(dump_line_test)
+
+// ============================================================================
+// Input Example (uncomment to use interactively)
+// ============================================================================
+
+// let name: String = read_line_prompt("Enter your name: ")
+// dump_line(name)
+
+// let age: Int = read_int()
+// dump_line(age)
+
+// ============================================================================
+// String Functions
+// ============================================================================
+
+// String length
+let text: String = "Hello, World!"
+let text_len: Int = len(text)
+dump("Length: ")
+dump_line(text_len)
+
+// String concatenation
+let greeting: String = concat("Hello", " Construct")
+dump_line(greeting)
+
+// String case conversion
+let upper_text: String = upper("convert to uppercase")
+dump_line(upper_text)
+
+let lower_text: String = lower("CONVERT TO LOWERCASE")
+dump_line(lower_text)
+
+// Trim whitespace
+let trimmed: String = trim("  spaces around  ")
+dump_line(trimmed)
+
+// String comparison
+let str1: String = "hello"
+let str2: String = "hello"
+let are_equal: Bool = eq(str1, str2)
+dump("Strings equal: ")
+dump_line(are_equal)
+
+// ============================================================================
+// Type Conversion
+// ============================================================================
+
+// Convert numbers to string
+let num_str: String = toStr(12345)
+dump("Number as string: ")
+dump_line(num_str)
+
+// Convert string to number
+let str_num: Int = toInt("54321")
+dump("String as number: ")
+dump_line(str_num)
+
+let float_from_str: Float = toFloat("3.14159")
+dump("Float: ")
+dump_line(float_from_str)
+
+// ============================================================================
+// Math Functions
+// ============================================================================
+
+// Absolute value
+let neg: Int = -42
+let abs_val: Int = abs(neg)
+dump("Absolute value of -42: ")
+dump_line(abs_val)
+
+// Max and min
+let a: Int = 100
+let b: Int = 200
+let maximum: Int = max(a, b)
+let minimum: Int = min(a, b)
+
+dump("Max(100, 200) = ")
+dump_line(maximum)
+
+dump("Min(100, 200) = ")
+dump_line(minimum)
+
+// Clamp value
+let value: Int = 50
+let clamped: Int = clamp(value, 0, 100)
+dump("Clamp(50, 0, 100) = ")
+dump_line(clamped)
+
+// Rounding
+let float_val: Float = 3.7
+let rounded: Float = round(float_val)
+dump("Round(3.7) = ")
+dump_line(rounded)
+
+let floored: Float = floor(float_val)
+dump("Floor(3.7) = ")
+dump_line(floored)
+
+let ceiled: Float = ceil(float_val)
+dump("Ceil(3.7) = ")
+dump_line(ceiled)
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+dump_line("Program completed successfully!")
+
+// Sleep example (uncomment to use)
+// dump("Sleeping for 2 seconds...")
+// sleep(2)
+// dump_line("Done!")
+
+// clear_screen() example (uncomment to use)
+// clear_screen()

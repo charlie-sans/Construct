@@ -238,7 +238,7 @@ int main(int argc, char* argv[]) {
         // Compile IR to desired output format
         if (compile_to_executable) {
             std::cout << "Compiling to executable..." << std::endl;
-            ClangCompiler clang_compiler;
+            ClangCompiler clang_compiler(argv[0]);
             clang_compiler.setKeepTemps(keep_temps);
             
             if (!clang_compiler.compileToExecutable(ir_code, output_file, {}, optimize_level)) {
@@ -250,7 +250,7 @@ int main(int argc, char* argv[]) {
             
         } else if (compile_to_object) {
             std::cout << "Compiling to object file..." << std::endl;
-            ClangCompiler clang_compiler;
+            ClangCompiler clang_compiler(argv[0]);
             clang_compiler.setKeepTemps(keep_temps);
             
             if (!clang_compiler.compileToObjectFile(ir_code, output_file, optimize_level)) {
@@ -262,7 +262,7 @@ int main(int argc, char* argv[]) {
             
         } else if (compile_to_assembly) {
             std::cout << "Compiling to assembly..." << std::endl;
-            ClangCompiler clang_compiler;
+            ClangCompiler clang_compiler(argv[0]);
             clang_compiler.setKeepTemps(keep_temps);
             
             if (!clang_compiler.compileToAssembly(ir_code, output_file, optimize_level)) {

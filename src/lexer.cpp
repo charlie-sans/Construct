@@ -118,6 +118,11 @@ Token Lexer::readString(char quote) {
     advance();  // skip opening quote
     
     while (current() != quote && current() != '\0') {
+        // Character literals (single quotes) cannot contain newlines
+        if (quote == '\'' && current() == '\n') {
+            throw std::runtime_error("Unexpected newline in character literal at line " + std::to_string(line));
+        }
+        
         if (current() == '\\') {
             advance();
             if (current() == 'n') str += '\n';

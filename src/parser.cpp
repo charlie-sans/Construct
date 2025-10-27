@@ -463,6 +463,8 @@ TypePtr Parser::parseFunctionType() {
 }
 
 ExprPtr Parser::parseExpression() {
+    // Skip any leading newlines before parsing expression
+    while (match(TokenType::NEWLINE) || match(TokenType::INDENT) || match(TokenType::DEDENT)) {}
     return parsePipe();
 }
 

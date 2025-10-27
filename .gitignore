@@ -1,0 +1,120 @@
+# LaTeX output
+*.aux
+*.bbl
+*.blg
+*.brf
+*.fls
+*.fdb_latexmk
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.nav
+*.snm
+*.vrb
+
+# Temporary files
+*~
+*.swp
+*.tmp
+*.c
+*.backup
+.DS_Store
+
+# Compiled files
+*.pdf
+*.dvi
+*.ps
+*.exe
+*.dll
+*.so
+*.o
+*.obj
+*.class
+*.pyc
+*.pyo
+*.jar
+*.war
+*.apk
+*.app
+*.deb
+*.rpm
+
+# Source archives
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.tar.bz2
+*.7z
+*.rar
+
+# Images
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.svg
+*.ico
+*.webp
+
+# Audio/Video
+*.mp3
+*.wav
+*.ogg
+*.flac
+*.mp4
+*.mkv
+*.mov
+*.avi
+
+# Office documents
+*.doc
+*.docx
+*.xls
+*.xlsx
+*.ppt
+*.pptx
+*.odt
+*.ods
+*.odp
+*.pdf
+
+# Code editor/project files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+*.code-workspace
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv/
+env/
+venv/
+
+# Rust
+target/
+
+# Go
+bin/
+*.test
+
+# Directories
+_build/
+_cache/
+latexmk/
+
+# Other
+*.fls
+*.fdb_latexmk

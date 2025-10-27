@@ -1,0 +1,10 @@
+let result1: String = "Hello" + " " + "World"
+dump(result1)
+nl()
+
+let result2: String = "Value: " + "42"
+dump(result2)
+nl()
+
+dump("Done!")
+nl()

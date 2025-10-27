@@ -1,0 +1,10 @@
+let x: Int = 42
+dump("The answer is " + toStr(x))
+nl()
+
+let name: String = "Construct"
+dump("Hello " + name + " language!")
+nl()
+
+dump("Combining: " + "numbers " + toStr(100) + " and " + toStr(200))
+nl()

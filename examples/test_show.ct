@@ -1,0 +1,28 @@
+show("Hello ")
+show("World")
+showln()
+
+showln("Direct newline output")
+
+let x: Int = 42
+show("Number: ")
+showln(x)
+
+let name: String = "Construct"
+show("Language: ")
+show(name)
+showln()
+
+show("Multiple: ")
+show("arg1 ")
+show("arg2 ")
+show("arg3")
+showln()
+
+let pi: Float = 3.14159
+show("Pi = ")
+showln(pi)
+
+let flag: Bool = false
+showln("Flag: " + toStr(flag))
+

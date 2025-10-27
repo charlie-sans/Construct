@@ -233,6 +233,397 @@ void LLVMCodegen::Impl::initBuiltins() {
         false
     );
     Function::Create(dump_string_type, Function::ExternalLinkage, "construct_dump_string", module.get());
+    
+    // ===== NEW STDLIB FUNCTIONS =====
+    
+    // dump_line functions (output with newline)
+    FunctionType* dump_int_line_type = FunctionType::get(
+        llvm::Type::getVoidTy(*context),
+        {llvm::Type::getInt32Ty(*context)},
+        false
+    );
+    Function::Create(dump_int_line_type, Function::ExternalLinkage, "construct_dump_int_line", module.get());
+    
+    FunctionType* dump_float_line_type = FunctionType::get(
+        llvm::Type::getVoidTy(*context),
+        {llvm::Type::getDoubleTy(*context)},
+        false
+    );
+    Function::Create(dump_float_line_type, Function::ExternalLinkage, "construct_dump_float_line", module.get());
+    
+    FunctionType* dump_bool_line_type = FunctionType::get(
+        llvm::Type::getVoidTy(*context),
+        {llvm::Type::getInt1Ty(*context)},
+        false
+    );
+    Function::Create(dump_bool_line_type, Function::ExternalLinkage, "construct_dump_bool_line", module.get());
+    
+    FunctionType* dump_string_line_type = FunctionType::get(
+        llvm::Type::getVoidTy(*context),
+        {llvm::PointerType::getUnqual(*context)},
+        false
+    );
+    Function::Create(dump_string_line_type, Function::ExternalLinkage, "construct_dump_string_line", module.get());
+    
+    // nl() - print newline
+    FunctionType* nl_type = FunctionType::get(
+        llvm::Type::getVoidTy(*context),
+        {},
+        false
+    );
+    Function::Create(nl_type, Function::ExternalLinkage, "construct_nl", module.get());
+    
+    // Input functions
+    FunctionType* read_int_type = FunctionType::get(
+        llvm::Type::getInt32Ty(*context),
+        {},
+        false
+    );
+    Function::Create(read_int_type, Function::ExternalLinkage, "construct_read_int", module.get());
+    
+    FunctionType* read_float_type = FunctionType::get(
+        llvm::Type::getDoubleTy(*context),
+        {},
+        false
+    );
+    Function::Create(read_float_type, Function::ExternalLinkage, "construct_read_float", module.get());
+    
+    FunctionType* read_bool_type = FunctionType::get(
+        llvm::Type::getInt1Ty(*context),
+        {},
+        false
+    );
+    Function::Create(read_bool_type, Function::ExternalLinkage, "construct_read_bool", module.get());
+    
+    FunctionType* read_string_type = FunctionType::get(
+        llvm::PointerType::getUnqual(*context),
+        {},
+        false
+    );
+    Function::Create(read_string_type, Function::ExternalLinkage, "construct_read_string", module.get());
+    
+    FunctionType* read_line_type = FunctionType::get(
+        llvm::PointerType::getUnqual(*context),
+        {},
+        false
+    );
+
+    //let contents = input()
+    FunctionType* input_type = FunctionType::get(
+        llvm::PointerType::getUnqual(*context),
+        {llvm::PointerType::getUnqual(*context)},
+        false
+    );
+    Function::Create(input_type, Function::ExternalLinkage, "input", module.get());
+
+    Function::Create(read_line_type, Function::ExternalLinkage, "construct_read_line", module.get());
+    
+    FunctionType* read_line_prompt_type = FunctionType::get(
+        llvm::PointerType::getUnqual(*context),
+        {llvm::PointerType::getUnqual(*context)},
+        false
+    );
+    Function::Create(read_line_prompt_type, Function::ExternalLinkage, "construct_read_line_prompt", module.get());
+    
+    // input() function (alias for read_line_prompt)
+    Function::Create(read_line_prompt_type, Function::ExternalLinkage, "construct_input", module.get());
+    
+    // String functions
+    FunctionType* string_upper_type = FunctionType::get(
+        llvm::PointerType::getUnqual(*context),
+        {llvm::PointerType::getUnqual(*context)},
+        false
+    );
+    Function::Create(string_upper_type, Function::ExternalLinkage, "construct_string_upper", module.get());
+    
+    FunctionType* string_lower_type = FunctionType::get(
+        llvm::PointerType::getUnqual(*context),
+        {llvm::PointerType::getUnqual(*context)},
+        false
+    );
+    Function::Create(string_lower_type, Function::ExternalLinkage, "construct_string_lower", module.get());
+    
+    FunctionType* string_trim_type = FunctionType::get(
+        llvm::PointerType::getUnqual(*context),
+        {llvm::PointerType::getUnqual(*context)},
+        false
+    );
+    Function::Create(string_trim_type, Function::ExternalLinkage, "construct_string_trim", module.get());
+    
+    FunctionType* string_concat_type = FunctionType::get(
+        llvm::PointerType::getUnqual(*context),
+        {llvm::PointerType::getUnqual(*context), llvm::PointerType::getUnqual(*context)},
+        false
+    );
+    Function::Create(string_concat_type, Function::ExternalLinkage, "construct_string_concat", module.get());
+    
+    FunctionType* string_eq_type = FunctionType::get(
+        llvm::Type::getInt1Ty(*context),
+        {llvm::PointerType::getUnqual(*context), llvm::PointerType::getUnqual(*context)},
+        false
+    );
+    Function::Create(string_eq_type, Function::ExternalLinkage, "construct_string_equals", module.get());
+    
+    FunctionType* string_starts_with_type = FunctionType::get(
+        llvm::Type::getInt1Ty(*context),
+        {llvm::PointerType::getUnqual(*context), llvm::PointerType::getUnqual(*context)},
+        false
+    );
+    Function::Create(string_starts_with_type, Function::ExternalLinkage, "construct_string_starts_with", module.get());
+    
+    FunctionType* string_ends_with_type = FunctionType::get(
+        llvm::Type::getInt1Ty(*context),
+        {llvm::PointerType::getUnqual(*context), llvm::PointerType::getUnqual(*context)},
+        false
+    );
+    Function::Create(string_ends_with_type, Function::ExternalLinkage, "construct_string_ends_with", module.get());
+    
+    // len() function - string/list length
+    FunctionType* len_type = FunctionType::get(
+        llvm::Type::getInt32Ty(*context),
+        {llvm::PointerType::getUnqual(*context)},
+        false
+    );
+    Function::Create(len_type, Function::ExternalLinkage, "construct_string_length", module.get());
+    
+    // Math functions - Integer versions
+    FunctionType* abs_int_type = FunctionType::get(
+        llvm::Type::getInt32Ty(*context),
+        {llvm::Type::getInt32Ty(*context)},
+        false
+    );
+    Function::Create(abs_int_type, Function::ExternalLinkage, "construct_abs_int", module.get());
+    
+    FunctionType* max_int_type = FunctionType::get(
+        llvm::Type::getInt32Ty(*context),
+        {llvm::Type::getInt32Ty(*context), llvm::Type::getInt32Ty(*context)},
+        false
+    );
+    Function::Create(max_int_type, Function::ExternalLinkage, "construct_max_int", module.get());
+    
+    FunctionType* min_int_type = FunctionType::get(
+        llvm::Type::getInt32Ty(*context),
+        {llvm::Type::getInt32Ty(*context), llvm::Type::getInt32Ty(*context)},
+        false
+    );
+    Function::Create(min_int_type, Function::ExternalLinkage, "construct_min_int", module.get());
+    
+    FunctionType* clamp_int_type = FunctionType::get(
+        llvm::Type::getInt32Ty(*context),
+        {llvm::Type::getInt32Ty(*context), llvm::Type::getInt32Ty(*context), llvm::Type::getInt32Ty(*context)},
+        false
+    );
+    Function::Create(clamp_int_type, Function::ExternalLinkage, "construct_clamp_int", module.get());
+    
+    // Math functions - Float versions
+    FunctionType* abs_float_type = FunctionType::get(
+        llvm::Type::getDoubleTy(*context),
+        {llvm::Type::getDoubleTy(*context)},
+        false
+    );
+    Function::Create(abs_float_type, Function::ExternalLinkage, "construct_abs_float", module.get());
+    
+    FunctionType* max_float_type = FunctionType::get(
+        llvm::Type::getDoubleTy(*context),
+        {llvm::Type::getDoubleTy(*context), llvm::Type::getDoubleTy(*context)},
+        false
+    );
+    Function::Create(max_float_type, Function::ExternalLinkage, "construct_max_float", module.get());
+    
+    FunctionType* min_float_type = FunctionType::get(
+        llvm::Type::getDoubleTy(*context),
+        {llvm::Type::getDoubleTy(*context), llvm::Type::getDoubleTy(*context)},
+        false
+    );
+    Function::Create(min_float_type, Function::ExternalLinkage, "construct_min_float", module.get());
+    
+    FunctionType* clamp_float_type = FunctionType::get(
+        llvm::Type::getDoubleTy(*context),
+        {llvm::Type::getDoubleTy(*context), llvm::Type::getDoubleTy(*context), llvm::Type::getDoubleTy(*context)},
+        false
+    );
+    Function::Create(clamp_float_type, Function::ExternalLinkage, "construct_clamp_float", module.get());
+    
+    FunctionType* round_type = FunctionType::get(
+        llvm::Type::getInt32Ty(*context),
+        {llvm::Type::getDoubleTy(*context)},
+        false
+    );
+    Function::Create(round_type, Function::ExternalLinkage, "construct_round", module.get());
+    
+    FunctionType* floor_type = FunctionType::get(
+        llvm::Type::getInt32Ty(*context),
+        {llvm::Type::getDoubleTy(*context)},
+        false
+    );
+    Function::Create(floor_type, Function::ExternalLinkage, "construct_floor", module.get());
+    
+    FunctionType* ceil_type = FunctionType::get(
+        llvm::Type::getInt32Ty(*context),
+        {llvm::Type::getDoubleTy(*context)},
+        false
+    );
+    Function::Create(ceil_type, Function::ExternalLinkage, "construct_ceil", module.get());
+    
+    // Type conversion functions
+    FunctionType* int_to_string_type = FunctionType::get(
+        llvm::PointerType::getUnqual(*context),
+        {llvm::Type::getInt32Ty(*context)},
+        false
+    );
+    Function::Create(int_to_string_type, Function::ExternalLinkage, "construct_int_to_string", module.get());
+    
+    FunctionType* float_to_string_type = FunctionType::get(
+        llvm::PointerType::getUnqual(*context),
+        {llvm::Type::getDoubleTy(*context)},
+        false
+    );
+    Function::Create(float_to_string_type, Function::ExternalLinkage, "construct_float_to_string", module.get());
+    
+    FunctionType* bool_to_string_type = FunctionType::get(
+        llvm::PointerType::getUnqual(*context),
+        {llvm::Type::getInt1Ty(*context)},
+        false
+    );
+    Function::Create(bool_to_string_type, Function::ExternalLinkage, "construct_bool_to_string", module.get());
+    
+    FunctionType* string_to_int_type = FunctionType::get(
+        llvm::Type::getInt32Ty(*context),
+        {llvm::PointerType::getUnqual(*context)},
+        false
+    );
+    Function::Create(string_to_int_type, Function::ExternalLinkage, "construct_string_to_int", module.get());
+    
+    FunctionType* string_to_float_type = FunctionType::get(
+        llvm::Type::getDoubleTy(*context),
+        {llvm::PointerType::getUnqual(*context)},
+        false
+    );
+    Function::Create(string_to_float_type, Function::ExternalLinkage, "construct_string_to_float", module.get());
+    
+    FunctionType* string_to_bool_type = FunctionType::get(
+        llvm::Type::getInt1Ty(*context),
+        {llvm::PointerType::getUnqual(*context)},
+        false
+    );
+    Function::Create(string_to_bool_type, Function::ExternalLinkage, "construct_string_to_bool", module.get());
+    
+    // Utility functions
+    FunctionType* sleep_type = FunctionType::get(
+        llvm::Type::getVoidTy(*context),
+        {llvm::Type::getInt32Ty(*context)},
+        false
+    );
+    Function::Create(sleep_type, Function::ExternalLinkage, "construct_sleep", module.get());
+    
+    FunctionType* sleep_ms_type = FunctionType::get(
+        llvm::Type::getVoidTy(*context),
+        {llvm::Type::getInt32Ty(*context)},
+        false
+    );
+    Function::Create(sleep_ms_type, Function::ExternalLinkage, "construct_sleep_ms", module.get());
+    
+    FunctionType* clear_screen_type = FunctionType::get(
+        llvm::Type::getVoidTy(*context),
+        {},
+        false
+    );
+    Function::Create(clear_screen_type, Function::ExternalLinkage, "construct_clear_screen", module.get());
+    
+    FunctionType* construct_exit_type = FunctionType::get(
+        llvm::Type::getVoidTy(*context),
+        {llvm::Type::getInt32Ty(*context)},
+        false
+    );
+    Function::Create(construct_exit_type, Function::ExternalLinkage, "construct_construct_exit", module.get());
+    
+    FunctionType* print_error_type = FunctionType::get(
+        llvm::Type::getVoidTy(*context),
+        {llvm::PointerType::getUnqual(*context)},
+        false
+    );
+    Function::Create(print_error_type, Function::ExternalLinkage, "construct_print_error", module.get());
+    
+    FunctionType* debug_type = FunctionType::get(
+        llvm::Type::getVoidTy(*context),
+        {llvm::PointerType::getUnqual(*context)},
+        false
+    );
+    Function::Create(debug_type, Function::ExternalLinkage, "construct_debug", module.get());
+    
+    // ===== NEW show() / showln() FUNCTIONS =====
+    
+    // show_int()
+    FunctionType* show_int_type = FunctionType::get(
+        llvm::Type::getVoidTy(*context),
+        {llvm::Type::getInt32Ty(*context)},
+        false
+    );
+    Function::Create(show_int_type, Function::ExternalLinkage, "construct_show_int", module.get());
+    
+    // show_float()
+    FunctionType* show_float_type = FunctionType::get(
+        llvm::Type::getVoidTy(*context),
+        {llvm::Type::getDoubleTy(*context)},
+        false
+    );
+    Function::Create(show_float_type, Function::ExternalLinkage, "construct_show_float", module.get());
+    
+    // show_bool()
+    FunctionType* show_bool_type = FunctionType::get(
+        llvm::Type::getVoidTy(*context),
+        {llvm::Type::getInt1Ty(*context)},
+        false
+    );
+    Function::Create(show_bool_type, Function::ExternalLinkage, "construct_show_bool", module.get());
+    
+    // show_string()
+    FunctionType* show_string_type = FunctionType::get(
+        llvm::Type::getVoidTy(*context),
+        {llvm::PointerType::getUnqual(*context)},
+        false
+    );
+    Function::Create(show_string_type, Function::ExternalLinkage, "construct_show_string", module.get());
+    
+    // showln_int()
+    FunctionType* showln_int_type = FunctionType::get(
+        llvm::Type::getVoidTy(*context),
+        {llvm::Type::getInt32Ty(*context)},
+        false
+    );
+    Function::Create(showln_int_type, Function::ExternalLinkage, "construct_showln_int", module.get());
+    
+    // showln_float()
+    FunctionType* showln_float_type = FunctionType::get(
+        llvm::Type::getVoidTy(*context),
+        {llvm::Type::getDoubleTy(*context)},
+        false
+    );
+    Function::Create(showln_float_type, Function::ExternalLinkage, "construct_showln_float", module.get());
+    
+    // showln_bool()
+    FunctionType* showln_bool_type = FunctionType::get(
+        llvm::Type::getVoidTy(*context),
+        {llvm::Type::getInt1Ty(*context)},
+        false
+    );
+    Function::Create(showln_bool_type, Function::ExternalLinkage, "construct_showln_bool", module.get());
+    
+    // showln_string()
+    FunctionType* showln_string_type = FunctionType::get(
+        llvm::Type::getVoidTy(*context),
+        {llvm::PointerType::getUnqual(*context)},
+        false
+    );
+    Function::Create(showln_string_type, Function::ExternalLinkage, "construct_showln_string", module.get());
+    
+    // showln() - newline only
+    FunctionType* showln_type = FunctionType::get(
+        llvm::Type::getVoidTy(*context),
+        {},
+        false
+    );
+    Function::Create(showln_type, Function::ExternalLinkage, "construct_showln", module.get());
 }
 
 llvm::Type* LLVMCodegen::Impl::convertType(const TypePtr& type) {
@@ -606,13 +997,27 @@ Value* LLVMCodegen::Impl::codegenBinaryOp(const ExprPtr& expr) {
     } else if (expr->op == "%") {
         return builder->CreateSRem(left, right, "remtmp");
     } else if (expr->op == "==") {
-        if (left->getType()->isIntegerTy()) {
+        // String comparison: if both are pointers, use string_equals
+        if (left->getType()->isPointerTy() && right->getType()->isPointerTy()) {
+            Function* eq_fn = module->getFunction("construct_string_equals");
+            if (!eq_fn) throw std::runtime_error("construct_string_equals function not found");
+            auto result = builder->CreateCall(eq_fn, {left, right});
+            // Convert to boolean (i8 to i1)
+            return builder->CreateICmpNE(result, ConstantInt::get(result->getType(), 0), "eqtmp");
+        } else if (left->getType()->isIntegerTy() || left->getType()->isPointerTy()) {
             return builder->CreateICmpEQ(left, right, "eqtmp");
         } else {
             return builder->CreateFCmpOEQ(left, right, "eqtmp");
         }
     } else if (expr->op == "!=") {
-        if (left->getType()->isIntegerTy()) {
+        // String comparison: if both are pointers, use string_equals
+        if (left->getType()->isPointerTy() && right->getType()->isPointerTy()) {
+            Function* eq_fn = module->getFunction("construct_string_equals");
+            if (!eq_fn) throw std::runtime_error("construct_string_equals function not found");
+            auto result = builder->CreateCall(eq_fn, {left, right});
+            // Convert to boolean (i8 to i1)
+            return builder->CreateICmpEQ(result, ConstantInt::get(result->getType(), 0), "netmp");
+        } else if (left->getType()->isIntegerTy() || left->getType()->isPointerTy()) {
             return builder->CreateICmpNE(left, right, "netmp");
         } else {
             return builder->CreateFCmpONE(left, right, "netmp");
@@ -872,6 +1277,329 @@ Value* LLVMCodegen::Impl::codegenCallExpr(const ExprPtr& expr) {
             
             if (dump_fn) {
                 return builder->CreateCall(dump_fn, {arg});
+            }
+        }
+        
+        // dump_line() function - same as dump but with newline
+        if (func_name == "dump_line" && !expr->arguments.empty()) {
+            auto arg = codegenExpr(expr->arguments[0]);
+            if (!arg) return nullptr;
+            
+            // Call appropriate dump_line function based on argument type
+            Function* dump_fn = nullptr;
+            if (arg->getType()->isIntegerTy(32)) {
+                dump_fn = module->getFunction("construct_dump_int_line");
+            } else if (arg->getType()->isDoubleTy()) {
+                dump_fn = module->getFunction("construct_dump_float_line");
+            } else if (arg->getType()->isIntegerTy(1)) {
+                dump_fn = module->getFunction("construct_dump_bool_line");
+            } else if (arg->getType()->isPointerTy()) {
+                dump_fn = module->getFunction("construct_dump_string_line");
+            }
+            
+            if (dump_fn) {
+                return builder->CreateCall(dump_fn, {arg});
+            }
+        }
+        
+        // nl() function - print newline
+        if (func_name == "nl" && expr->arguments.empty()) {
+            Function* nl_fn = module->getFunction("construct_nl");
+            if (nl_fn) {
+                return builder->CreateCall(nl_fn, {});
+            }
+        }
+        
+        // show() function - variadic output without newline
+        if (func_name == "show" && !expr->arguments.empty()) {
+            for (const auto& arg_expr : expr->arguments) {
+                auto arg = codegenExpr(arg_expr);
+                if (!arg) return nullptr;
+                
+                Function* show_fn = nullptr;
+                if (arg->getType()->isIntegerTy(32)) {
+                    show_fn = module->getFunction("construct_show_int");
+                } else if (arg->getType()->isDoubleTy()) {
+                    show_fn = module->getFunction("construct_show_float");
+                } else if (arg->getType()->isIntegerTy(1)) {
+                    show_fn = module->getFunction("construct_show_bool");
+                } else if (arg->getType()->isPointerTy()) {
+                    show_fn = module->getFunction("construct_show_string");
+                }
+                
+                if (show_fn) {
+                    builder->CreateCall(show_fn, {arg});
+                }
+            }
+            // Return a constant 0 for void function
+            return llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0);
+        }
+        
+        // showln() function - variadic output with newline
+        if (func_name == "showln" && !expr->arguments.empty()) {
+            // First, output all arguments using show
+            for (const auto& arg_expr : expr->arguments) {
+                auto arg = codegenExpr(arg_expr);
+                if (!arg) return nullptr;
+                
+                Function* show_fn = nullptr;
+                if (arg->getType()->isIntegerTy(32)) {
+                    show_fn = module->getFunction("construct_show_int");
+                } else if (arg->getType()->isDoubleTy()) {
+                    show_fn = module->getFunction("construct_show_float");
+                } else if (arg->getType()->isIntegerTy(1)) {
+                    show_fn = module->getFunction("construct_show_bool");
+                } else if (arg->getType()->isPointerTy()) {
+                    show_fn = module->getFunction("construct_show_string");
+                }
+                
+                if (show_fn) {
+                    builder->CreateCall(show_fn, {arg});
+                }
+            }
+            // Then print newline
+            Function* nl_fn = module->getFunction("construct_showln");
+            if (nl_fn) {
+                builder->CreateCall(nl_fn, {});
+            }
+            // Return a constant 0 for void function
+            return llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0);
+        }
+        
+        // showln() with no arguments - just print newline
+        if (func_name == "showln" && expr->arguments.empty()) {
+            Function* nl_fn = module->getFunction("construct_showln");
+            if (nl_fn) {
+                return builder->CreateCall(nl_fn, {});
+            }
+        }
+        
+        // abs() function
+        if (func_name == "abs" && expr->arguments.size() == 1) {
+            auto arg = codegenExpr(expr->arguments[0]);
+            if (!arg) return nullptr;
+            
+            Function* abs_fn = nullptr;
+            if (arg->getType()->isIntegerTy(32)) {
+                abs_fn = module->getFunction("construct_abs_int");
+            } else if (arg->getType()->isDoubleTy()) {
+                abs_fn = module->getFunction("construct_abs_float");
+            }
+            
+            if (abs_fn) {
+                return builder->CreateCall(abs_fn, {arg});
+            }
+        }
+        
+        // max() function
+        if (func_name == "max" && expr->arguments.size() == 2) {
+            auto arg1 = codegenExpr(expr->arguments[0]);
+            auto arg2 = codegenExpr(expr->arguments[1]);
+            if (!arg1 || !arg2) return nullptr;
+            
+            Function* max_fn = nullptr;
+            if (arg1->getType()->isIntegerTy(32) && arg2->getType()->isIntegerTy(32)) {
+                max_fn = module->getFunction("construct_max_int");
+            } else if (arg1->getType()->isDoubleTy() && arg2->getType()->isDoubleTy()) {
+                max_fn = module->getFunction("construct_max_float");
+            }
+            
+            if (max_fn) {
+                return builder->CreateCall(max_fn, {arg1, arg2});
+            }
+        }
+        
+        // min() function
+        if (func_name == "min" && expr->arguments.size() == 2) {
+            auto arg1 = codegenExpr(expr->arguments[0]);
+            auto arg2 = codegenExpr(expr->arguments[1]);
+            if (!arg1 || !arg2) return nullptr;
+            
+            Function* min_fn = nullptr;
+            if (arg1->getType()->isIntegerTy(32) && arg2->getType()->isIntegerTy(32)) {
+                min_fn = module->getFunction("construct_min_int");
+            } else if (arg1->getType()->isDoubleTy() && arg2->getType()->isDoubleTy()) {
+                min_fn = module->getFunction("construct_min_float");
+            }
+            
+            if (min_fn) {
+                return builder->CreateCall(min_fn, {arg1, arg2});
+            }
+        }
+        
+        // clamp() function
+        if (func_name == "clamp" && expr->arguments.size() == 3) {
+            auto val = codegenExpr(expr->arguments[0]);
+            auto min_val = codegenExpr(expr->arguments[1]);
+            auto max_val = codegenExpr(expr->arguments[2]);
+            if (!val || !min_val || !max_val) return nullptr;
+            
+            Function* clamp_fn = nullptr;
+            if (val->getType()->isIntegerTy(32)) {
+                clamp_fn = module->getFunction("construct_clamp_int");
+            } else if (val->getType()->isDoubleTy()) {
+                clamp_fn = module->getFunction("construct_clamp_float");
+            }
+            
+            if (clamp_fn) {
+                return builder->CreateCall(clamp_fn, {val, min_val, max_val});
+            }
+        }
+        
+        // round(), floor(), ceil() functions
+        if ((func_name == "round" || func_name == "floor" || func_name == "ceil") && expr->arguments.size() == 1) {
+            auto arg = codegenExpr(expr->arguments[0]);
+            if (!arg) return nullptr;
+            
+            std::string construct_fn = "construct_" + func_name;
+            Function* fn = module->getFunction(construct_fn);
+            if (fn) {
+                return builder->CreateCall(fn, {arg});
+            }
+        }
+        
+        // len() function - alias for string_length
+        if (func_name == "len" && expr->arguments.size() == 1) {
+            auto arg = codegenExpr(expr->arguments[0]);
+            if (!arg) return nullptr;
+            
+            Function* len_fn = module->getFunction("construct_string_length");
+            if (len_fn) {
+                return builder->CreateCall(len_fn, {arg});
+            }
+        }
+        
+        // String functions: concat, upper, lower, trim, eq, etc.
+        if ((func_name == "concat" || func_name == "eq") && expr->arguments.size() == 2) {
+            auto arg1 = codegenExpr(expr->arguments[0]);
+            auto arg2 = codegenExpr(expr->arguments[1]);
+            if (!arg1 || !arg2) return nullptr;
+            
+            std::string construct_fn = "construct_string_" + func_name;
+            // Handle 'eq' -> 'equals' mapping
+            if (func_name == "eq") {
+                construct_fn = "construct_string_equals";
+            }
+            Function* fn = module->getFunction(construct_fn);
+            if (fn) {
+                return builder->CreateCall(fn, {arg1, arg2});
+            }
+        }
+        
+        if ((func_name == "upper" || func_name == "lower" || func_name == "trim") && expr->arguments.size() == 1) {
+            auto arg = codegenExpr(expr->arguments[0]);
+            if (!arg) return nullptr;
+            
+            std::string construct_fn = "construct_string_" + func_name;
+            Function* fn = module->getFunction(construct_fn);
+            if (fn) {
+                return builder->CreateCall(fn, {arg});
+            }
+        }
+        
+        // starts_with() and ends_with()
+        if ((func_name == "starts_with" || func_name == "ends_with") && expr->arguments.size() == 2) {
+            auto str = codegenExpr(expr->arguments[0]);
+            auto pattern = codegenExpr(expr->arguments[1]);
+            if (!str || !pattern) return nullptr;
+            
+            std::string construct_fn = "construct_string_" + func_name;
+            Function* fn = module->getFunction(construct_fn);
+            if (fn) {
+                return builder->CreateCall(fn, {str, pattern});
+            }
+        }
+        
+        // Type conversion: toStr, toInt, toFloat, toBool
+        if (func_name == "toStr" && expr->arguments.size() == 1) {
+            auto arg = codegenExpr(expr->arguments[0]);
+            if (!arg) return nullptr;
+            
+            Function* conv_fn = nullptr;
+            if (arg->getType()->isIntegerTy(32)) {
+                conv_fn = module->getFunction("construct_int_to_string");
+            } else if (arg->getType()->isDoubleTy()) {
+                conv_fn = module->getFunction("construct_float_to_string");
+            } else if (arg->getType()->isIntegerTy(1)) {
+                conv_fn = module->getFunction("construct_bool_to_string");
+            }
+            
+            if (conv_fn) {
+                return builder->CreateCall(conv_fn, {arg});
+            }
+        }
+        
+        if ((func_name == "toInt" || func_name == "toFloat" || func_name == "toBool") && expr->arguments.size() == 1) {
+            auto arg = codegenExpr(expr->arguments[0]);
+            if (!arg) return nullptr;
+            
+            std::string construct_fn = "construct_string_to_" + func_name.substr(2);  // Remove "to"
+            std::transform(construct_fn.begin(), construct_fn.end(), construct_fn.begin(), ::tolower);
+            construct_fn = "construct_string_to_" + func_name.substr(2);  // Rebuild properly
+            
+            // Fix the function name mapping
+            if (func_name == "toInt") construct_fn = "construct_string_to_int";
+            else if (func_name == "toFloat") construct_fn = "construct_string_to_float";
+            else if (func_name == "toBool") construct_fn = "construct_string_to_bool";
+            
+            Function* fn = module->getFunction(construct_fn);
+            if (fn) {
+                return builder->CreateCall(fn, {arg});
+            }
+        }
+        
+        // Utility functions
+        if ((func_name == "read_int" || func_name == "read_float" || func_name == "read_bool" || func_name == "read_string" || func_name == "read_line") && expr->arguments.empty()) {
+            std::string construct_fn = "construct_" + func_name;
+            Function* fn = module->getFunction(construct_fn);
+            if (fn) {
+                return builder->CreateCall(fn, {});
+            }
+        }
+        
+        if (func_name == "read_line_prompt" && expr->arguments.size() == 1) {
+            auto prompt = codegenExpr(expr->arguments[0]);
+            if (!prompt) return nullptr;
+            
+            Function* fn = module->getFunction("construct_read_line_prompt");
+            if (fn) {
+                return builder->CreateCall(fn, {prompt});
+            }
+        }
+        
+        // input() function - alias for read_line_prompt
+        if (func_name == "input" && expr->arguments.size() == 1) {
+            auto prompt = codegenExpr(expr->arguments[0]);
+            if (!prompt) return nullptr;
+            
+            Function* fn = module->getFunction("construct_input");
+            if (fn) {
+                return builder->CreateCall(fn, {prompt});
+            }
+        }
+        
+        if ((func_name == "sleep" || func_name == "sleep_ms") && expr->arguments.size() == 1) {
+            auto duration = codegenExpr(expr->arguments[0]);
+            if (!duration) return nullptr;
+            
+            std::string construct_fn = "construct_" + func_name;
+            Function* fn = module->getFunction(construct_fn);
+            if (fn) {
+                return builder->CreateCall(fn, {duration});
+            }
+        }
+        
+        if ((func_name == "clear_screen" || func_name == "exit" || func_name == "print_error" || func_name == "debug") && expr->arguments.size() <= 1) {
+            std::string construct_fn = "construct_" + func_name;
+            Function* fn = module->getFunction(construct_fn);
+            if (fn) {
+                if (expr->arguments.empty()) {
+                    return builder->CreateCall(fn, {});
+                } else {
+                    auto arg = codegenExpr(expr->arguments[0]);
+                    if (!arg) return nullptr;
+                    return builder->CreateCall(fn, {arg});
+                }
             }
         }
         
