@@ -22,6 +22,7 @@ const std::unordered_map<std::string, TokenType> Lexer::KEYWORDS = {
     {"do", TokenType::KW_DO},
     {"end", TokenType::KW_END},
     {"while", TokenType::KW_WHILE},
+    {"extern", TokenType::KW_EXTERN},
     {"edit", TokenType::EDIT},
 };
 
@@ -176,6 +177,13 @@ void Lexer::handleIndentation() {
             return;
         }
         
+        // Skip indentation processing if we're in a continuation context
+        // (inside parentheses/brackets or after an arrow)
+        if (paren_depth > 0 || last_token_is_continuation) {
+            last_token_is_continuation = false;  // Reset the flag
+            return;
+        }
+        
         int current_indent = indent_stack.back();
         if (indent > current_indent) {
             indent_stack.push_back(indent);
@@ -226,26 +234,32 @@ Token Lexer::nextToken() {
     // Single character tokens
     if (current() == '(') {
         advance();
+        paren_depth++;
         return makeToken(TokenType::LPAREN, "(");
     }
     if (current() == ')') {
         advance();
+        paren_depth--;
         return makeToken(TokenType::RPAREN, ")");
     }
     if (current() == '{') {
         advance();
+        paren_depth++;
         return makeToken(TokenType::LBRACE, "{");
     }
     if (current() == '}') {
         advance();
+        paren_depth--;
         return makeToken(TokenType::RBRACE, "}");
     }
     if (current() == '[') {
         advance();
+        paren_depth++;
         return makeToken(TokenType::LBRACKET, "[");
     }
     if (current() == ']') {
         advance();
+        paren_depth--;
         return makeToken(TokenType::RBRACKET, "]");
     }
     if (current() == ',') {
@@ -277,6 +291,7 @@ Token Lexer::nextToken() {
         advance();
         if (current() == '>') {
             advance();
+            last_token_is_continuation = true;  // Mark that next line is a continuation
             return makeToken(TokenType::ARROW, "->");
         }
         return makeToken(TokenType::MINUS, "-");

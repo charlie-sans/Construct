@@ -1,0 +1,18 @@
+// Example: Using extern functions to link to C libraries
+
+// Declare external functions from the C standard library
+extern fn printf(fmt: String): Int
+extern fn sin(x: Float): Float
+extern fn sqrt(x: Float): Float
+extern fn strlen(str: String): Int
+
+// Call the external printf function
+let result: Int = printf("Hello from Construct!\n")
+
+// Example of using mathematical functions
+let x: Float = 3.14159
+let sine_x: Float = sin(x)
+let sqrt_x: Float = sqrt(2.0)
+
+// Example of using string function
+let str_len: Int = strlen("test")

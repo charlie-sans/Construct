@@ -1,0 +1,18 @@
+// Test: extern functions with math library
+
+// Declare math functions from libm
+extern fn sin(x: Float): Float
+extern fn cos(x: Float): Float  
+extern fn sqrt(x: Float): Float
+
+// Declare printf
+extern fn printf(fmt: String): Int
+
+// Test calling extern functions
+let pi: Float = 3.14159
+let result1: Float = sin(pi)
+let result2: Float = cos(pi)
+let result3: Float = sqrt(4.0)
+
+// Print the results using printf
+let status: Int = printf("Sin(π) = %f, Cos(π) = %f, Sqrt(4) = %f\n")

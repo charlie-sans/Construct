@@ -90,6 +90,10 @@ void LLVMCodegen::Impl::initBuiltins() {
     );
     Function::Create(printf_type, Function::ExternalLinkage, "printf", module.get());
     
+    std::vector<llvm::Type*> scanf_args = {
+        llvm::PointerType::getUnqual(*context)
+    };
+
     // puts(str) - for simple string output
     std::vector<llvm::Type*> puts_args = {llvm::PointerType::getUnqual(*context)};
     FunctionType* puts_type = FunctionType::get(
@@ -99,6 +103,16 @@ void LLVMCodegen::Impl::initBuiltins() {
     );
     Function::Create(puts_type, Function::ExternalLinkage, "puts", module.get());
     
+    // readline(<const char* prompt>) - for reading a line of input
+    std::vector<llvm::Type*> readline_args = {llvm::PointerType::getUnqual(*context)};
+    FunctionType* readline_type = FunctionType::get(
+        llvm::PointerType::getUnqual(*context),
+        readline_args,
+        false
+    );
+    Function::Create(readline_type, Function::ExternalLinkage, "readline", module.get());
+
+
     // fdump(const char* format, const char* value) - for formatted dumping
     std::vector<llvm::Type*> fdump_args = {
         llvm::PointerType::getUnqual(*context),
@@ -307,11 +321,21 @@ std::string LLVMCodegen::Impl::generateIR(const Program& program) {
             } else if (stmt->kind == Statement::LET_BINDING) {
                 // Check if binding is a function definition
                 if (stmt->expr && stmt->expr->kind == Expr::LAMBDA) {
-                    // Compile as function
-                    auto fn = codegenFunction(stmt->expr, stmt->name);
-                    if (fn) {
-                        symbol_table[stmt->name] = fn;
-                        last_value = fn;
+                    // Check if it's an extern function
+                    if (stmt->expr->is_extern) {
+                        // Handle extern function - create declaration only
+                        auto fn = codegenFunction(stmt->expr, stmt->name);
+                        if (fn) {
+                            symbol_table[stmt->name] = fn;
+                            last_value = fn;
+                        }
+                    } else {
+                        // Compile as normal function
+                        auto fn = codegenFunction(stmt->expr, stmt->name);
+                        if (fn) {
+                            symbol_table[stmt->name] = fn;
+                            last_value = fn;
+                        }
                     }
                 } else {
                     auto value = codegenExpr(stmt->expr);
@@ -1039,21 +1063,40 @@ Value* LLVMCodegen::Impl::codegenRecordLiteral(const ExprPtr& expr) {
 Function* LLVMCodegen::Impl::codegenFunction(const ExprPtr& func_expr, const std::string& name) {
     if (!func_expr || func_expr->kind != Expr::LAMBDA) return nullptr;
     
-    // Save old builder state
-    BasicBlock* old_bb = builder->GetInsertBlock();
-    
     // Get parameter types - all default to i32 for now
     std::vector<llvm::Type*> param_types;
-    for (const auto& param : func_expr->parameters) {
+    for (size_t i = 0; i < func_expr->parameters.size(); ++i) {
         param_types.push_back(llvm::Type::getInt32Ty(*context));
     }
+    
+    // For extern functions, we need to infer the return type from the type annotation
+    // If no type annotation, default to i32
+    llvm::Type* return_type = llvm::Type::getInt32Ty(*context);
+    
+    if (func_expr->is_extern) {
+        // For extern functions, use type annotations if available
+        if (func_expr->return_type) {
+            return_type = convertType(func_expr->return_type);
+        }
+        
+        // Create function declaration with ExternalLinkage (but no body)
+        FunctionType* extern_fn_type = FunctionType::get(return_type, param_types, false);
+        Function* extern_fn = Function::Create(extern_fn_type, Function::ExternalLinkage, name, module.get());
+        
+        // Return the function declaration (no body is generated)
+        return extern_fn;
+    }
+    
+    // For non-extern functions, use the existing two-pass approach for type inference
+    
+    // Save old builder state
+    BasicBlock* old_bb = builder->GetInsertBlock();
     
     // Strategy: Use a two-pass approach
     // Pass 1: Quick type inference - create a minimal function to determine return type
     // Pass 2: Create the real function with correct type
     
     // Create a temporary function to infer return type
-    // Use void as placeholder return type initially
     FunctionType* temp_type = FunctionType::get(llvm::Type::getInt32Ty(*context), param_types, false);
     Function* temp_fn = Function::Create(temp_type, Function::ExternalLinkage, 
                                          name + "_temp_inference", module.get());

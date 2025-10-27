@@ -3,6 +3,7 @@
 #include "compiler.h"
 #include "clang_compiler.h"
 #include "file_includer.h"
+#include "ast_printer.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -40,6 +41,7 @@ void printUsage(const char* program) {
     std::cerr << "  -S                Compile to assembly (.s)" << std::endl;
     std::cerr << "  -O<level>         Optimization level: 0, 1, 2, 3, s, z (default: 0)" << std::endl;
     std::cerr << "  -v                Verbose output (show generated IR)" << std::endl;
+    std::cerr << "  --dump-ast        Print the AST and exit" << std::endl;
     std::cerr << "  --keep-temps      Keep temporary files" << std::endl;
     std::cerr << "  --list-stdlib     Print all stdlib functions as JSON and exit" << std::endl;
     std::cerr << "  --help            Show this help message" << std::endl;
@@ -49,6 +51,7 @@ void printUsage(const char* program) {
     std::cerr << "  " << program << " main.ct -c -o main.o       # Compile to object file" << std::endl;
     std::cerr << "  " << program << " main.ct -x -o main         # Compile to executable" << std::endl;
     std::cerr << "  " << program << " main.ct -S -o main.s       # Compile to assembly" << std::endl;
+    std::cerr << "  " << program << " main.ct --dump-ast         # Print the AST" << std::endl;
     std::cerr << "  " << program << " --list-stdlib              # Show stdlib functions (for IDE)" << std::endl;
 }
 
@@ -85,6 +88,7 @@ int main(int argc, char* argv[]) {
     bool compile_to_assembly = false;
     bool verbose = false;
     bool keep_temps = false;
+    bool dump_ast = false;
     int optimize_level = 0;
     
     for (int i = 2; i < argc; i++) {
@@ -100,6 +104,8 @@ int main(int argc, char* argv[]) {
             compile_to_assembly = true;
         } else if (arg == "-v" || arg == "--verbose") {
             verbose = true;
+        } else if (arg == "--dump-ast") {
+            dump_ast = true;
         } else if (arg == "--keep-temps") {
             keep_temps = true;
         } else if (arg.substr(0, 2) == "-O") {
@@ -144,6 +150,12 @@ int main(int argc, char* argv[]) {
         Parser parser(tokens);
         Program program = parser.parse();
         std::cout << "  Parsed " << program.statements.size() << " statements" << std::endl;
+        
+        // Dump AST if requested
+        if (dump_ast) {
+            ASTPrinter::printProgram(program);
+            return 0;
+        }
         
         // Process include directives
         std::cout << "Processing includes..." << std::endl;

@@ -221,6 +221,7 @@ struct Expr {
     ExprPtr body;  // The body of the function
     std::string fn_name;  // for named functions
     TypePtr return_type;  // optional
+    bool is_extern = false;  // Mark external/foreign functions
     
     // Collections
     std::vector<ExprPtr> elements;

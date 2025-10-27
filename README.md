@@ -88,6 +88,23 @@ add: Int -> Int -> Int = fn (a: Int) -> fn (b: Int) -> a + b
 add 2 3  # Type is inferred even without explicit annotation
 ```
 
+### 8. Foreign Function Interface (FFI) - Extern Functions
+
+Link to and call external C/C++ functions from dynamic libraries:
+
+```construct
+# Declare external C functions
+extern fn sin(x: Float): Float
+extern fn sqrt(x: Float): Float
+extern fn strlen(str: String): Int
+
+# Use them in your code
+result: Float = sin(3.14159)
+length: Int = strlen("hello")
+```
+
+See [EXTERN_KEYWORD.md](docs/EXTERN_KEYWORD.md) for detailed documentation.
+
 ## Project Structure
 
 ```

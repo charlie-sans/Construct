@@ -1,0 +1,5 @@
+// Simple test of extern functions
+extern fn printf(fmt: String): Int
+
+// Call the external printf function
+let result: Int = printf("Extern functions working!\n")

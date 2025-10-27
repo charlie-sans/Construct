@@ -188,8 +188,21 @@ StmtPtr Parser::parseStatement() {
         return parseLetBinding();
     }
     
+    // Check for extern fn
+    bool is_extern = false;
+    if (check(TokenType::KW_EXTERN)) {
+        is_extern = true;
+        advance();  // skip 'extern'
+    }
+    
     if (check(TokenType::KW_FN)) {
-        return parseFunctionDef();
+        auto stmt = parseFunctionDef();
+        if (is_extern && stmt->expr) {
+            stmt->expr->is_extern = true;
+        }
+        return stmt;
+    } else if (is_extern) {
+        throw ParseError("'extern' keyword must be followed by 'fn'");
     }
     
     if (check(TokenType::KW_TYPE)) {
@@ -285,10 +298,11 @@ StmtPtr Parser::parseFunctionDef() {
 
     // Check for block-style function: fn name(params): type { ... } or fn name(params) -> type { ... }
     // or simple-style: fn name(params) = expr
+    // or extern-style: extern fn name(params): type
     if (check(TokenType::IDENTIFIER)) {
         auto nameToken = peek();
         if (tokens[current + 1].type == TokenType::LPAREN) {
-            // Named function (block or simple style)
+            // Named function (block or simple style or extern)
             expr->fn_name = advance().value;  // consume name
 
             advance();  // consume '('
@@ -304,11 +318,28 @@ StmtPtr Parser::parseFunctionDef() {
             }
 
             // Block style: fn name(params) { ... } or fn name(params) -> type { ... }
+            // or extern-style: fn name(params): type
             expr->kind = Expr::BLOCK_FN;
 
             // Accept either : type or -> type
             if (match(TokenType::COLON) || match(TokenType::ARROW)) {
                 expr->return_type = parseType();
+            }
+
+            // Check if this is an extern function (no body follows)
+            // An extern function will have a type annotation and the next token will NOT be '{'
+            if (expr->return_type && !check(TokenType::LBRACE)) {
+                // This is an extern function - no body needed
+                expr->is_extern = true;
+                stmt->expr = expr;
+                return stmt;
+            }
+
+            // For extern functions marked explicitly with is_extern, no body is required
+            if (expr->is_extern) {
+                // Extern function - no body needed
+                stmt->expr = expr;
+                return stmt;
             }
 
             consume(TokenType::LBRACE, "Expected '{' for function body");
@@ -632,6 +663,9 @@ ExprPtr Parser::parseRecordUpdate(ExprPtr base) {
 }
 
 ExprPtr Parser::parsePrimary() {
+    if (check(TokenType::INDENT) || check(TokenType::DEDENT)) {
+        advance();  // skip indentation tokens
+    }
     // If expression
     if (check(TokenType::KW_IF)) {
         return parseIfExpr();
@@ -681,7 +715,7 @@ ExprPtr Parser::parsePrimary() {
         auto expr = parseExpression();
         
         // Skip whitespace after first expression
-        while (match(TokenType::NEWLINE) || match(TokenType::INDENT) || match(TokenType::DEDENT)) {}
+        while (match(TokenType::NEWLINE) || match(TokenType::INDENT) || match(TokenType::DEDENT)) { advance(); }
         
         if (match(TokenType::COMMA)) {
             auto tuple = std::make_shared<Expr>(Expr::TUPLE_LITERAL);
@@ -892,7 +926,14 @@ ExprPtr Parser::parseLambda() {
         consume(TokenType::RPAREN, "Expected ')'");
     }
     
+    // Skip whitespace after parameters
+    while (match(TokenType::NEWLINE) || match(TokenType::INDENT) || match(TokenType::DEDENT)) {}
+    
     consume(TokenType::ARROW, "Expected '->'");
+    
+    // Skip whitespace after arrow
+    while (match(TokenType::NEWLINE) || match(TokenType::INDENT) || match(TokenType::DEDENT)) {}
+    
     expr->body = parseExpression();
     
     return expr;

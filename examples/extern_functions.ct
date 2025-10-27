@@ -1,0 +1,61 @@
+// Example: Using extern with dynamically linked libraries
+// This example demonstrates how to declare and use external C functions
+
+// =============================================================================
+// Example 1: Standard C Math Functions
+// =============================================================================
+
+// Declare math functions from libm
+extern fn sin(x: Float): Float
+extern fn cos(x: Float): Float  
+extern fn sqrt(x: Float): Float
+extern fn pow(x: Float, y: Float): Float
+
+// Test: Calculate sin(π/2) = 1.0
+let angle: Float = 1.5707963267948966  // π/2
+let result: Float = sin(angle)
+
+// =============================================================================
+// Example 2: Standard C Library I/O and String Functions
+// =============================================================================
+
+// These are already declared in the stdlib, but here's how you'd do it:
+// extern fn printf(fmt: String): Int
+
+// External strlen from libc
+extern fn strlen(str: String): Int
+
+// Get length of a string
+let test_str: String = "hello"
+let str_length: Int = strlen(test_str)
+
+// =============================================================================
+// Example 3: Custom C Library Function
+// =============================================================================
+
+// If you had a custom C library with functions you wanted to use:
+// extern fn my_custom_function(x: Int, y: Int): Int
+// extern fn process_data(data: String): String
+
+// let result: Int = my_custom_function(10, 20)
+
+// =============================================================================
+// Notes on extern functions:
+// =============================================================================
+//
+// 1. Extern functions are declarations only - they link to external libraries
+// 
+// 2. When compiling, you must link with the appropriate libraries using:
+//    gcc output.o -o executable -lm  # Link with libm for math functions
+//
+// 3. The type annotations are crucial - they tell the compiler what types
+//    to expect and return from the external functions
+//
+// 4. Extern functions use C calling conventions and FFI (Foreign Function Interface)
+//
+// 5. Common libraries to link:
+//    - -lm : Math library (sin, cos, sqrt, etc.)
+//    - -lc : C standard library (usually linked by default)
+//    - -lpthread : POSIX threads
+//    - Custom libraries with -L/path/to/lib -lcustomlib
+//

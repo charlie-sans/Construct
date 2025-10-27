@@ -39,6 +39,53 @@ extern "C" void construct_dump_string(const char* str) {
 }
 
 // ============================================================================
+// Input Functions (Stubs)
+/// Read an integer value from stdin
+extern "C" int32_t construct_read_int(void) {
+    int32_t value;
+    scanf("%d", &value);
+    return value;
+}
+
+/// Read a floating-point value from stdin
+extern "C" double construct_read_float(void) {
+    double value;
+    scanf("%lf", &value);
+    return value;
+}
+
+/// Read a boolean value from stdin (0 = false, 1 = true)
+extern "C" int8_t construct_read_bool(void) {
+    int8_t value;
+    scanf("%hhd", &value);
+    return value;
+}
+
+/// Read a string value from stdin
+extern "C" const char* construct_read_string(void) {
+    static char buffer[256];
+    scanf("%255s", buffer);
+    return buffer;
+}
+
+extern "C" const char* readline(const char* prompt) {
+    if (prompt) {
+        printf("%s", prompt);
+    }
+    static char buffer[512];
+    if (fgets(buffer, sizeof(buffer), stdin)) {
+        // Remove trailing newline
+        size_t len = 0;
+        while (buffer[len] != '\0') ++len;
+        if (len > 0 && buffer[len - 1] == '\n') {
+            buffer[len - 1] = '\0';
+        }
+        return buffer;
+    }
+    return nullptr;
+}
+
+/// ============================================================================
 // Utility Functions
 // ============================================================================
 

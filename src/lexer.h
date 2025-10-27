@@ -37,6 +37,7 @@ enum class TokenType {
     KW_DO,
     KW_END,
     KW_WHILE,
+    KW_EXTERN,
     
     // Operators
     PLUS,          // +
@@ -109,6 +110,8 @@ private:
     std::vector<int> indent_stack = {0};
     bool pending_dedents = false;
     std::vector<Token> pending_tokens;
+    int paren_depth = 0;  // Track nesting of (), [], {}
+    bool last_token_is_continuation = false;  // Track if we're continuing after ->
     
     static const std::unordered_map<std::string, TokenType> KEYWORDS;
     
