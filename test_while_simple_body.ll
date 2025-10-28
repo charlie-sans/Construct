@@ -143,5 +143,14 @@ declare void @construct_showln()
 
 define i32 @main() {
 entry:
+  br label %while.cond
+
+while.cond:                                       ; preds = %while.body, %entry
+  br i1 true, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
   ret i32 0
 }

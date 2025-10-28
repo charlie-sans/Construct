@@ -1,0 +1,4 @@
+x: Int = 5
+y: Int = 10
+z: Int = x + y
+dump(z)

@@ -4,6 +4,7 @@
 #include "clang_compiler.h"
 #include "file_includer.h"
 #include "ast_printer.h"
+#include "diagnostics.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -31,6 +32,14 @@ void writeFile(const std::string& filename, const std::string& content) {
     file << content;
 }
 
+// Check if NO_COLOR environment variable is set
+void initializeColorSupport() {
+    const char* no_color = std::getenv("NO_COLOR");
+    if (no_color != nullptr) {
+        TerminalStyle::setColorEnabled(false);
+    }
+}
+
 void printUsage(const char* program) {
     std::cerr << "Usage: " << program << " <file.ct> [options]" << std::endl;
     std::cerr << std::endl;
@@ -56,6 +65,8 @@ void printUsage(const char* program) {
 }
 
 int main(int argc, char* argv[]) {
+    initializeColorSupport();
+    
     if (argc < 2) {
         printUsage(argv[0]);
         return 1;
@@ -68,7 +79,7 @@ int main(int argc, char* argv[]) {
             std::cout << compiler.getStdlibAsJSON();
             return 0;
         } catch (const std::exception& e) {
-            std::cerr << "Error: " << e.what() << std::endl;
+            Diagnostics::error(e.what());
             return 1;
         }
     }
@@ -113,7 +124,7 @@ int main(int argc, char* argv[]) {
                 optimize_level = std::stoi(arg.substr(2));
             }
         } else {
-            std::cerr << "Unknown option: " << arg << std::endl;
+            Diagnostics::error("Unknown option: " + arg);
             printUsage(argv[0]);
             return 1;
         }
@@ -135,30 +146,36 @@ int main(int argc, char* argv[]) {
     }
     
     try {
+        ProgressIndicator progress("Construct Compiler", 6);
+        
         // Read source file
-        std::cout << "Reading " << input_file << "..." << std::endl;
+        Diagnostics::step("Reading", input_file);
         std::string source = readFile(input_file);
+        progress.completeStep("Reading source file");
         
         // Lex
-        std::cout << "Tokenizing..." << std::endl;
+        Diagnostics::step("Tokenizing", "source code");
         Lexer lexer(source);
         auto tokens = lexer.tokenize();
-        std::cout << "  Generated " << tokens.size() << " tokens" << std::endl;
+        Diagnostics::stat("tokens", tokens.size());
+        progress.completeStep("Tokenizing", std::to_string(tokens.size()) + " tokens");
         
         // Parse
-        std::cout << "Parsing..." << std::endl;
+        Diagnostics::step("Parsing", "AST generation");
         Parser parser(tokens);
         Program program = parser.parse();
-        std::cout << "  Parsed " << program.statements.size() << " statements" << std::endl;
+        Diagnostics::stat("statements", program.statements.size());
+        progress.completeStep("Parsing", std::to_string(program.statements.size()) + " statements");
         
         // Dump AST if requested
         if (dump_ast) {
+            Diagnostics::header("Abstract Syntax Tree");
             ASTPrinter::printProgram(program);
             return 0;
         }
         
         // Process include directives
-        std::cout << "Processing includes..." << std::endl;
+        Diagnostics::step("Processing", "include directives");
         FileIncluder includer;
         
         // Configure include paths
@@ -180,7 +197,7 @@ int main(int argc, char* argv[]) {
         try {
             includer.setIncludePaths(include_paths);
         } catch (const std::exception& e) {
-            std::cerr << "Warning: Failed to set include paths: " << e.what() << std::endl;
+            Diagnostics::warning(std::string("Failed to set include paths: ") + e.what());
         }
         
         Program final_program = program;
@@ -198,16 +215,15 @@ int main(int argc, char* argv[]) {
                     
                     // Resolve include paths
                     auto files = includer.resolveFiles(stmt->include_paths, base_dir);
-                    std::cout << "  Including " << files.size() << " file(s)" << std::endl;
+                    Diagnostics::stat("included files", files.size());
                     
                     // Read and parse each included file
                     for (const auto& file : files) {
-                        std::cout << "    - " << file << std::endl;
                         Program included = includer.readAndParseFile(file);
                         included_programs.push_back(included);
                     }
                 } catch (const std::exception& e) {
-                    std::cerr << "Warning: Include failed - " << e.what() << std::endl;
+                    Diagnostics::warning(std::string("Include failed: ") + e.what());
                 }
             } else {
                 // Keep non-include statements
@@ -219,71 +235,73 @@ int main(int argc, char* argv[]) {
         if (!included_programs.empty()) {
             final_program.statements = processed_stmts;
             final_program = includer.mergePrograms(final_program, included_programs);
-            std::cout << "  Merged " << included_programs.size() << " program(s) - total statements: " 
-                      << final_program.statements.size() << std::endl;
+            Diagnostics::stat("merged programs", included_programs.size());
+            Diagnostics::stat("total statements", final_program.statements.size());
         }
+        progress.completeStep("Processing includes");
         
         // Compile to LLVM IR
-        std::cout << "Compiling to LLVM IR..." << std::endl;
+        Diagnostics::step("Compiling", "to LLVM IR");
         Compiler compiler;
         std::string ir_code = compiler.compileToIR(final_program);
+        progress.completeStep("LLVM IR generation");
         
         // Print IR if verbose
         if (verbose) {
-            std::cout << "\n=== Generated LLVM IR ===" << std::endl;
+            Diagnostics::header("Generated LLVM IR");
             std::cout << ir_code << std::endl;
-            std::cout << "=== End IR ===" << std::endl << std::endl;
+            Diagnostics::separator();
         }
         
         // Compile IR to desired output format
         if (compile_to_executable) {
-            std::cout << "Compiling to executable..." << std::endl;
+            Diagnostics::step("Linking", "to executable");
             ClangCompiler clang_compiler(argv[0]);
             clang_compiler.setKeepTemps(keep_temps);
             
             if (!clang_compiler.compileToExecutable(ir_code, output_file, {}, optimize_level)) {
-                std::cerr << "Error: " << clang_compiler.getLastError() << std::endl;
+                progress.failed(clang_compiler.getLastError());
                 return 1;
             }
             
-            std::cout << "Executable created: " << output_file << std::endl;
+            progress.completeStep("Executable generation", output_file);
             
         } else if (compile_to_object) {
-            std::cout << "Compiling to object file..." << std::endl;
+            Diagnostics::step("Compiling", "to object file");
             ClangCompiler clang_compiler(argv[0]);
             clang_compiler.setKeepTemps(keep_temps);
             
             if (!clang_compiler.compileToObjectFile(ir_code, output_file, optimize_level)) {
-                std::cerr << "Error: " << clang_compiler.getLastError() << std::endl;
+                progress.failed(clang_compiler.getLastError());
                 return 1;
             }
             
-            std::cout << "Object file created: " << output_file << std::endl;
+            progress.completeStep("Object file generation", output_file);
             
         } else if (compile_to_assembly) {
-            std::cout << "Compiling to assembly..." << std::endl;
+            Diagnostics::step("Compiling", "to assembly");
             ClangCompiler clang_compiler(argv[0]);
             clang_compiler.setKeepTemps(keep_temps);
             
             if (!clang_compiler.compileToAssembly(ir_code, output_file, optimize_level)) {
-                std::cerr << "Error: " << clang_compiler.getLastError() << std::endl;
+                progress.failed(clang_compiler.getLastError());
                 return 1;
             }
             
-            std::cout << "Assembly file created: " << output_file << std::endl;
+            progress.completeStep("Assembly generation", output_file);
             
         } else {
             // Default: output LLVM IR
-            std::cout << "Writing LLVM IR to " << output_file << "..." << std::endl;
+            Diagnostics::step("Writing", "LLVM IR to disk");
             writeFile(output_file, ir_code);
-            std::cout << "IR file created: " << output_file << std::endl;
+            progress.completeStep("IR file generation", output_file);
         }
         
-        std::cout << "\nCompilation successful!" << std::endl;
+        progress.complete();
         return 0;
         
     } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
+        Diagnostics::error(e.what());
         return 1;
     }
 }

@@ -16,7 +16,7 @@ include_dirs = include_directories('src')
 stdlib_lib = shared_library('construct_stdlib',
     'src/srdlib/Stream.cpp',
     install: true,
-    install_dir: '/usr/local/lib'
+    install_dir: '/lib' # Install stdlib to system lib directory so it actualy can be found for linking with programs like ld, clang, etc.
 )
 
 # Source files (compiler executable - excludes stdlib)
@@ -29,6 +29,7 @@ sources = [
     'src/clang_compiler.cpp',
     'src/file_includer.cpp',
     'src/ast_printer.cpp',
+    'src/diagnostics.cpp',
 ]
 
 # Header files (for dependency tracking)
@@ -40,6 +41,7 @@ headers = [
     'src/llvm_codegen.h',
     'src/clang_compiler.h',
     'src/ast_printer.h',
+    'src/diagnostics.h',
     'src/srdlib/stdlib.h',
 ]
 

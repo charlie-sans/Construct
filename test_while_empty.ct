@@ -1,0 +1,7 @@
+extern fn InitWindow(width: Int, height: Int, windowname: String) {}
+extern fn WindowShouldClose() -> Bool {}
+
+let show = fn() ->
+    InitWindow(800, 600, "My Raylib Window")
+    while !WindowShouldClose() do
+    end

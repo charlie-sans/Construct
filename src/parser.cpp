@@ -158,8 +158,8 @@ Program Parser::parse() {
     Program program;
     
     while (!check(TokenType::EOF_TOKEN)) {
-        // Skip newlines at statement level
-        while (match(TokenType::NEWLINE)) {}
+        // Skip newlines, indentation, and dedentation at statement level
+        while (match(TokenType::NEWLINE) || match(TokenType::INDENT) || match(TokenType::DEDENT)) {}
 
         if (check(TokenType::EOF_TOKEN)) break;
 
@@ -174,7 +174,7 @@ Program Parser::parse() {
             synchronize();
         }
 
-        while (match(TokenType::NEWLINE)) {}
+        while (match(TokenType::NEWLINE) || match(TokenType::INDENT) || match(TokenType::DEDENT)) {}
     }
     
     return program;
@@ -842,7 +842,32 @@ ExprPtr Parser::parseForLoop() {
     // Skip whitespace before body
     while (match(TokenType::NEWLINE) || match(TokenType::INDENT) || match(TokenType::DEDENT)) {}
     
-    expr->loop_body = parseExpression();
+    // Check if the body is empty (next token is 'end')
+    if (check(TokenType::KW_END)) {
+        // Empty body - create an empty block
+        auto empty_block = std::make_shared<Expr>(Expr::BLOCK);
+        expr->loop_body = empty_block;
+    } else {
+        // Parse block of expressions until 'end'
+        auto block = std::make_shared<Expr>(Expr::BLOCK);
+        
+        while (!check(TokenType::KW_END)) {
+            // Skip whitespace between expressions
+            while (match(TokenType::NEWLINE) || match(TokenType::INDENT) || match(TokenType::DEDENT)) {}
+            
+            if (check(TokenType::KW_END)) break;
+            
+            auto body_expr = parseExpression();
+            if (body_expr) {
+                block->elements.push_back(body_expr);
+            }
+            
+            // Skip whitespace after expression
+            while (match(TokenType::NEWLINE) || match(TokenType::INDENT) || match(TokenType::DEDENT)) {}
+        }
+        
+        expr->loop_body = block;
+    }
     
     // Skip whitespace before end
     while (match(TokenType::NEWLINE) || match(TokenType::INDENT) || match(TokenType::DEDENT)) {}
@@ -865,7 +890,32 @@ ExprPtr Parser::parseWhileLoop() {
     // Skip whitespace before body
     while (match(TokenType::NEWLINE) || match(TokenType::INDENT) || match(TokenType::DEDENT)) {}
     
-    expr->loop_body = parseExpression();
+    // Check if the body is empty (next token is 'end')
+    if (check(TokenType::KW_END)) {
+        // Empty body - create an empty block
+        auto empty_block = std::make_shared<Expr>(Expr::BLOCK);
+        expr->loop_body = empty_block;
+    } else {
+        // Parse block of expressions until 'end'
+        auto block = std::make_shared<Expr>(Expr::BLOCK);
+        
+        while (!check(TokenType::KW_END)) {
+            // Skip whitespace between expressions
+            while (match(TokenType::NEWLINE) || match(TokenType::INDENT) || match(TokenType::DEDENT)) {}
+            
+            if (check(TokenType::KW_END)) break;
+            
+            auto body_expr = parseExpression();
+            if (body_expr) {
+                block->elements.push_back(body_expr);
+            }
+            
+            // Skip whitespace after expression
+            while (match(TokenType::NEWLINE) || match(TokenType::INDENT) || match(TokenType::DEDENT)) {}
+        }
+        
+        expr->loop_body = block;
+    }
     
     // Skip whitespace before end
     while (match(TokenType::NEWLINE) || match(TokenType::INDENT) || match(TokenType::DEDENT)) {}

@@ -1,6 +1,10 @@
 ; ModuleID = 'construct'
 source_filename = "construct"
 
+@str = private unnamed_addr constant [17 x i8] c"My Raylib Window\00", align 1
+@str.1 = private unnamed_addr constant [17 x i8] c"My Raylib Window\00", align 1
+@str.2 = private unnamed_addr constant [15 x i8] c"Hello, Raylib!\00", align 1
+
 declare i32 @printf(ptr, ...)
 
 declare i32 @puts(ptr)
@@ -143,5 +147,42 @@ declare void @construct_showln()
 
 define i32 @main() {
 entry:
-  ret i32 0
+  %0 = call i32 @meow()
+  br label %while.cond
+
+while.cond:                                       ; preds = %while.body, %entry
+  %1 = call i32 @WindowShouldClose()
+  %bool_conv = icmp ne i32 %1, 0
+  %nottmp = xor i1 %bool_conv, true
+  br i1 %nottmp, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %2 = call i32 @BeginDrawing()
+  %3 = call i32 @DrawText(ptr @str.2, i32 190, i32 200, i32 20, i32 0)
+  %4 = call i32 @EndDrawing()
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  %5 = call i32 @CloseWindow()
+  ret i32 %5
 }
+
+declare i32 @InitWindow(i32, i32, ptr)
+
+define i32 @show() {
+entry:
+  %0 = call i32 @InitWindow(i32 800, i32 600, ptr @str.1)
+  ret i32 %0
+}
+
+declare i32 @meow()
+
+declare i32 @WindowShouldClose()
+
+declare i32 @BeginDrawing()
+
+declare i32 @DrawText(ptr, i32, i32, i32, i32)
+
+declare i32 @EndDrawing()
+
+declare i32 @CloseWindow()

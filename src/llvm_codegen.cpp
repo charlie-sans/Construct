@@ -942,6 +942,19 @@ Value* LLVMCodegen::Impl::codegenExpr(const ExprPtr& expr) {
             throw std::runtime_error("Unsupported pipe target");
         }
             
+        case Expr::BLOCK: {
+            // Sequential block of expressions - return the value of the last one
+            Value* last_val = nullptr;
+            for (const auto& elem : expr->elements) {
+                last_val = codegenExpr(elem);
+            }
+            // If block is empty, return a null value (0)
+            if (!last_val) {
+                last_val = ConstantInt::get(llvm::Type::getInt32Ty(*context), 0);
+            }
+            return last_val;
+        }
+            
         default:
             return nullptr;
     }
@@ -1074,7 +1087,21 @@ Value* LLVMCodegen::Impl::codegenUnaryOp(const ExprPtr& expr) {
             return builder->CreateFNeg(operand, "negtmp");
         }
     } else if (expr->op == "!") {
-        return builder->CreateNot(operand, "nottmp");
+        // For NOT operator, convert to i1 first if needed, then negate
+        llvm::Value* bool_val = operand;
+        if (!operand->getType()->isIntegerTy(1)) {
+            // If it's an i32, convert non-zero to true
+            if (operand->getType()->isIntegerTy(32)) {
+                bool_val = builder->CreateICmpNE(operand, ConstantInt::get(llvm::Type::getInt32Ty(*context), 0), "bool_conv");
+            } else if (operand->getType()->isPointerTy()) {
+                // For pointers, check if not null
+                bool_val = builder->CreateICmpNE(operand, ConstantPointerNull::get(cast<PointerType>(operand->getType())), "ptr_null_check");
+            } else {
+                // Fallback for other types
+                bool_val = operand;
+            }
+        }
+        return builder->CreateNot(bool_val, "nottmp");
     }
     
     throw std::runtime_error("Unknown unary operator: " + expr->op);
@@ -1235,8 +1262,10 @@ Value* LLVMCodegen::Impl::codegenWhileLoop(const ExprPtr& expr) {
     // Generate body
     builder->SetInsertPoint(body_block);
     auto body_val = codegenExpr(expr->loop_body);
-    if (!body_val) return nullptr;
-    builder->CreateBr(cond_block);  // Loop back to condition
+    // For empty body blocks, just branch back to condition without body_val
+    if (!builder->GetInsertBlock()->getTerminator()) {
+        builder->CreateBr(cond_block);  // Loop back to condition
+    }
     
     // Continue at exit block
     builder->SetInsertPoint(exit_block);

@@ -1,0 +1,5 @@
+fn main(): Int = {
+  x: Int = 5
+  y: Int = 10
+  return x + y
+}

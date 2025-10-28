@@ -1,6 +1,9 @@
 ; ModuleID = 'construct'
 source_filename = "construct"
 
+@str = private unnamed_addr constant [17 x i8] c"My Raylib Window\00", align 1
+@str.1 = private unnamed_addr constant [17 x i8] c"My Raylib Window\00", align 1
+
 declare i32 @printf(ptr, ...)
 
 declare i32 @puts(ptr)
@@ -143,5 +146,27 @@ declare void @construct_showln()
 
 define i32 @main() {
 entry:
+  br label %while.cond
+
+while.cond:                                       ; preds = %while.body, %entry
+  %0 = call i32 @WindowShouldClose()
+  %bool_conv = icmp ne i32 %0, 0
+  %nottmp = xor i1 %bool_conv, true
+  br i1 %nottmp, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
   ret i32 0
 }
+
+declare i32 @InitWindow(i32, i32, ptr)
+
+define i32 @show() {
+entry:
+  %0 = call i32 @InitWindow(i32 800, i32 600, ptr @str.1)
+  ret i32 %0
+}
+
+declare i32 @WindowShouldClose()

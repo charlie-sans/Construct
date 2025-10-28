@@ -143,5 +143,6 @@ declare void @construct_showln()
 
 define i32 @main() {
 entry:
+  call void @construct_dump_int(i32 42)
   ret i32 0
 }
