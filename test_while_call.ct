@@ -1,6 +1,0 @@
-extern fn test() {}
-
-let result = 
-    while true do
-        test()
-    end

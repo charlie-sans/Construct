@@ -43,12 +43,14 @@ public:
      * @param output_file Path to output executable
      * @param stdlib_objects Vector of stdlib object files to link
      * @param optimize_level Optimization level: 0, 1, 2, 3, s, z
+     * @param libraries Vector of libraries to link (without -l prefix)
      * @return true if successful
      */
     bool compileToExecutable(const std::string& ir_code,
                             const std::string& output_file,
                             const std::vector<std::string>& stdlib_objects = {},
-                            int optimize_level = 0);
+                            int optimize_level = 0,
+                            const std::vector<std::string>& libraries = {});
     
     /**
      * Get the last error message

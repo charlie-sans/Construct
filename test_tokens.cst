@@ -1,4 +1,0 @@
-let result : Int =
-if 1 == 1
-then 2
-else 3

@@ -1,10 +1,24 @@
 #!/usr/bin/env python3
 """
 Generate LLVM function declarations from stdlib.h
-This script parses stdlib.h and generates the initBuiltins() code automatically.
+This script parses stdlib.h and generates category-based builtin registration functions.
+
+Each function category (output, input, string, etc.) gets its own registration function:
+- registerOutputFunctions()
+- registerInputFunctions()
+- registerStringFunctions()
+- registerConversionFunctions()
+- registerMathFunctions()
+- registerUtilityFunctions()
+
+The initBuiltins() function calls all category functions in sequence.
 
 Usage:
-    python3 generate_builtins.py src/srdlib/stdlib.h > /tmp/builtins.cpp
+    # Print to stdout
+    python3 generate_builtins.py src/srdlib/stdlib.h
+    
+    # Generate to file
+    python3 generate_builtins.py src/srdlib/stdlib.h src/srdlib/generated_builtins.cpp
 """
 
 import re
@@ -72,14 +86,7 @@ def type_to_llvm(c_type):
     return 'llvm::Type::getInt32Ty(*context)'
 
 def generate_builtin_code(functions):
-    """Generate the initBuiltins() C++ code."""
-    code = """// AUTO-GENERATED: Do not edit manually
-// Generated from stdlib.h
-
-void LLVMCodegen::Impl::initBuiltins() {
-    // Add standard library functions
-"""
-    
+    """Generate separate function registration functions for each category."""
     # Group functions by category
     output_funcs = [f for f in functions if 'dump' in f['name'] or 'print' in f['name'] or 'show' in f['name']]
     input_funcs = [f for f in functions if 'read' in f['name'] or 'input' in f['name']]
@@ -88,21 +95,70 @@ void LLVMCodegen::Impl::initBuiltins() {
     math_funcs = [f for f in functions if any(x in f['name'] for x in ['abs', 'max', 'min', 'clamp', 'round', 'floor', 'ceil'])]
     utility_funcs = [f for f in functions if f not in output_funcs + input_funcs + string_funcs + conversion_funcs + math_funcs]
     
-    # Add functions by category
-    for category_name, category_funcs in [
-        ("Output Functions", output_funcs),
-        ("Input Functions", input_funcs),
-        ("String Functions", string_funcs),
-        ("Type Conversion Functions", conversion_funcs),
-        ("Math Functions", math_funcs),
-        ("Utility Functions", utility_funcs),
-    ]:
-        if category_funcs:
-            code += f"\n    // {category_name}\n"
-            for func in category_funcs:
-                code += generate_function_declaration(func)
+    categories = [
+        ("Output Functions", output_funcs, "registerOutputFunctions"),
+        ("Input Functions", input_funcs, "registerInputFunctions"),
+        ("String Functions", string_funcs, "registerStringFunctions"),
+        ("Type Conversion Functions", conversion_funcs, "registerConversionFunctions"),
+        ("Math Functions", math_funcs, "registerMathFunctions"),
+        ("Utility Functions", utility_funcs, "registerUtilityFunctions"),
+    ]
     
-    code += "\n}\n"
+    code = """// AUTO-GENERATED: Do not edit manually
+// Generated from stdlib.h
+// This file contains helper functions to register builtin functions by category
+
+#include "llvm_codegen.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/FunctionType.h"
+#include <vector>
+
+namespace construct {
+
+using namespace llvm;
+
+"""
+    
+    # Generate category registration functions
+    for category_name, category_funcs, func_name in categories:
+        if category_funcs:
+            code += generate_category_function(category_name, category_funcs, func_name)
+            code += "\n\n"
+    
+    # Generate the main initBuiltins function that calls all category functions
+    code += generate_init_builtins_function(categories)
+    
+    code += "\n} // namespace construct\n"
+    return code
+
+
+def generate_category_function(category_name, funcs, func_name):
+    """Generate a function that registers all functions in a category."""
+    code = f"""// {category_name}
+void LLVMCodegen::Impl::{func_name}() {{"""
+    
+    for func in funcs:
+        func_code = generate_function_declaration(func)
+        # Remove the extra indentation that generate_function_declaration adds
+        lines = func_code.split('\n')
+        cleaned_lines = [line[4:] if line.startswith('    ') else line for line in lines]
+        code += "\n    " + "\n    ".join(cleaned_lines)
+    
+    code += "\n}"
+    return code
+
+
+def generate_init_builtins_function(categories):
+    """Generate the main initBuiltins function that calls all category functions."""
+    code = """// Main initialization function that calls all category registration functions
+void LLVMCodegen::Impl::initBuiltins() {
+    // Register all function categories"""
+    
+    for _, funcs, func_name in categories:
+        if funcs:
+            code += f"\n    {func_name}();"
+    
+    code += "\n}"
     return code
 
 def generate_function_declaration(func):
@@ -141,9 +197,20 @@ def generate_function_declaration(func):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python3 generate_builtins.py <stdlib.h>")
+        print("Usage: python3 generate_builtins.py <stdlib.h> [output_file]")
+        print()
+        print("If output_file is specified, writes to that file. Otherwise prints to stdout.")
         sys.exit(1)
     
-    functions = parse_stdlib_header(sys.argv[1])
+    stdlib_path = sys.argv[1]
+    output_file = sys.argv[2] if len(sys.argv) > 2 else None
+    
+    functions = parse_stdlib_header(stdlib_path)
     code = generate_builtin_code(functions)
-    print(code)
+    
+    if output_file:
+        with open(output_file, 'w') as f:
+            f.write(code)
+        print(f"Generated {len(functions)} builtin functions to {output_file}")
+    else:
+        print(code)

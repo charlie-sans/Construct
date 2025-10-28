@@ -65,6 +65,12 @@ private:
     
     // Utility
     void initBuiltins();
+    void registerOutputFunctions();
+    void registerInputFunctions();
+    void registerStringFunctions();
+    void registerConversionFunctions();
+    void registerMathFunctions();
+    void registerUtilityFunctions();
     std::string moduleToString();
 };
 
@@ -624,6 +630,15 @@ void LLVMCodegen::Impl::initBuiltins() {
         false
     );
     Function::Create(showln_type, Function::ExternalLinkage, "construct_showln", module.get());
+    
+    // string_to_cstr(string_ptr) -> i8*
+    // Converts a Construct string (pointer to string data) to a C string (i8*)
+    FunctionType* string_to_cstr_type = FunctionType::get(
+        llvm::PointerType::get(llvm::Type::getInt8Ty(*context), 0),  // Return i8*
+        {llvm::PointerType::getUnqual(*context)},  // Parameter: pointer to string
+        false
+    );
+    Function::Create(string_to_cstr_type, Function::ExternalLinkage, "construct_string_to_cstr", module.get());
 }
 
 llvm::Type* LLVMCodegen::Impl::convertType(const TypePtr& type) {
@@ -641,6 +656,18 @@ llvm::Type* LLVMCodegen::Impl::convertType(const TypePtr& type) {
             
         case Type::STRING:
             return llvm::PointerType::getUnqual(*context);
+            
+        case Type::CSTR:
+            // C string: i8*
+            return llvm::PointerType::get(llvm::Type::getInt8Ty(*context), 0);
+            
+        case Type::INTPTR:
+            // Raw pointer: i8*
+            return llvm::PointerType::get(llvm::Type::getInt8Ty(*context), 0);
+            
+        case Type::VOID:
+            // Void return type
+            return llvm::Type::getVoidTy(*context);
             
         case Type::LIST: {
             // For now, represent as i32* (array of i32)
@@ -750,20 +777,30 @@ std::string LLVMCodegen::Impl::generateIR(const Program& program) {
         throw std::runtime_error("No insert point after generating statements");
     }
     
-    // Convert result to i32 if needed (for boolean and other types)
-    if (last_value->getType() != llvm::Type::getInt32Ty(*context)) {
-        if (last_value->getType()->isIntegerTy(1)) {
-            // Convert i1 to i32: i1 true becomes 1, i1 false becomes 0
-            last_value = builder->CreateZExt(last_value, llvm::Type::getInt32Ty(*context));
-        } else if (last_value->getType()->isPointerTy() || last_value->getType()->isFunctionTy()) {
-            // For pointers or functions, just use 0
-            last_value = ConstantInt::get(llvm::Type::getInt32Ty(*context), 0);
-        }
-    }
-    
     // Add return statement to the current block if it doesn't already have a terminator
     if (!current_block->getTerminator()) {
-        builder->CreateRet(last_value);
+        // Check if the last value is void - if so, return void
+        if (last_value && last_value->getType()->isVoidTy()) {
+            builder->CreateRetVoid();
+        } else {
+            // Convert result to i32 for main return (main always returns i32)
+            if (last_value->getType() != llvm::Type::getInt32Ty(*context)) {
+                if (last_value->getType()->isIntegerTy(1)) {
+                    // Convert i1 to i32: i1 true becomes 1, i1 false becomes 0
+                    last_value = builder->CreateZExt(last_value, llvm::Type::getInt32Ty(*context));
+                } else if (last_value->getType()->isDoubleTy()) {
+                    // Convert double to i32 (truncate)
+                    last_value = builder->CreateFPToSI(last_value, llvm::Type::getInt32Ty(*context));
+                } else if (last_value->getType()->isPointerTy() || last_value->getType()->isFunctionTy()) {
+                    // For pointers or functions, just use 0
+                    last_value = ConstantInt::get(llvm::Type::getInt32Ty(*context), 0);
+                } else {
+                    // For any other type, try to cast
+                    last_value = builder->CreateIntCast(last_value, llvm::Type::getInt32Ty(*context), true);
+                }
+            }
+            builder->CreateRet(last_value);
+        }
     }
     // If the current block already has a terminator (e.g., from a branch),
     // we need to make sure the last value is properly returned in all paths.
@@ -943,12 +980,20 @@ Value* LLVMCodegen::Impl::codegenExpr(const ExprPtr& expr) {
         }
             
         case Expr::BLOCK: {
-            // Sequential block of expressions - return the value of the last one
+            // Sequential block of statements - execute each statement
             Value* last_val = nullptr;
-            for (const auto& elem : expr->elements) {
-                last_val = codegenExpr(elem);
+            for (const auto& stmt : expr->statements) {
+                codegenStmt(stmt);
+                // If the statement is an expression statement, capture its value
+                if (stmt->kind == Statement::EXPR_STMT && stmt->expr) {
+                    auto val = codegenExpr(stmt->expr);
+                    // Only keep non-void results
+                    if (val && !val->getType()->isVoidTy()) {
+                        last_val = val;
+                    }
+                }
             }
-            // If block is empty, return a null value (0)
+            // If block is empty or no expr statements, return a null value (0)
             if (!last_val) {
                 last_val = ConstantInt::get(llvm::Type::getInt32Ty(*context), 0);
             }
@@ -1820,10 +1865,14 @@ Value* LLVMCodegen::Impl::codegenRecordLiteral(const ExprPtr& expr) {
 Function* LLVMCodegen::Impl::codegenFunction(const ExprPtr& func_expr, const std::string& name) {
     if (!func_expr || func_expr->kind != Expr::LAMBDA) return nullptr;
     
-    // Get parameter types - all default to i32 for now
+    // Get parameter types - use annotations if available, default to i32
     std::vector<llvm::Type*> param_types;
     for (size_t i = 0; i < func_expr->parameters.size(); ++i) {
-        param_types.push_back(llvm::Type::getInt32Ty(*context));
+        llvm::Type* param_type = llvm::Type::getInt32Ty(*context);
+        if (i < func_expr->parameters.size() && func_expr->parameters[i].type) {
+            param_type = convertType(func_expr->parameters[i].type);
+        }
+        param_types.push_back(param_type);
     }
     
     // For extern functions, we need to infer the return type from the type annotation
@@ -1876,10 +1925,18 @@ Function* LLVMCodegen::Impl::codegenFunction(const ExprPtr& func_expr, const std
     
     // Evaluate body to get return type
     auto inferred_result = codegenExpr(func_expr->body);
+    
+    llvm::Type* inferred_return_type;
     if (!inferred_result) {
+        // No result from body, assume i32
         inferred_result = ConstantInt::get(llvm::Type::getInt32Ty(*context), 0);
+        inferred_return_type = llvm::Type::getInt32Ty(*context);
+    } else if (inferred_result->getType()->isVoidTy()) {
+        // Body returns void
+        inferred_return_type = llvm::Type::getVoidTy(*context);
+    } else {
+        inferred_return_type = inferred_result->getType();
     }
-    llvm::Type* inferred_return_type = inferred_result->getType();
     
     // Restore symbol table
     symbol_table = saved_symbol_table;
@@ -1908,7 +1965,12 @@ Function* LLVMCodegen::Impl::codegenFunction(const ExprPtr& func_expr, const std
     // Compile function body with correct type
     auto result = codegenExpr(func_expr->body);
     if (!result) {
-        result = ConstantInt::get(inferred_return_type, 0);
+        // If no result, create a default value based on return type
+        if (inferred_return_type->isVoidTy()) {
+            result = nullptr;  // No value for void
+        } else {
+            result = ConstantInt::get(inferred_return_type, 0);
+        }
     }
     
     // Restore symbol table
@@ -1917,7 +1979,12 @@ Function* LLVMCodegen::Impl::codegenFunction(const ExprPtr& func_expr, const std
     // Add return statement
     BasicBlock* current_bb = builder->GetInsertBlock();
     if (current_bb && !current_bb->getTerminator()) {
-        builder->CreateRet(result);
+        if (inferred_return_type->isVoidTy()) {
+            // For void functions, emit ret void without a value
+            builder->CreateRetVoid();
+        } else {
+            builder->CreateRet(result);
+        }
     }
     
     // Restore old builder position

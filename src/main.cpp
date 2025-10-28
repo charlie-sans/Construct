@@ -48,6 +48,7 @@ void printUsage(const char* program) {
     std::cerr << "  -c                Compile to object file (.o)" << std::endl;
     std::cerr << "  -x                Compile to executable" << std::endl;
     std::cerr << "  -S                Compile to assembly (.s)" << std::endl;
+    std::cerr << "  -l <lib>          Link with library (e.g., -l raylib)" << std::endl;
     std::cerr << "  -O<level>         Optimization level: 0, 1, 2, 3, s, z (default: 0)" << std::endl;
     std::cerr << "  -v                Verbose output (show generated IR)" << std::endl;
     std::cerr << "  --dump-ast        Print the AST and exit" << std::endl;
@@ -101,12 +102,15 @@ int main(int argc, char* argv[]) {
     bool keep_temps = false;
     bool dump_ast = false;
     int optimize_level = 0;
+    std::vector<std::string> libraries;  // Libraries to link
     
     for (int i = 2; i < argc; i++) {
         std::string arg = argv[i];
         
         if (arg == "-o" && i + 1 < argc) {
             output_file = argv[++i];
+        } else if (arg == "-l" && i + 1 < argc) {
+            libraries.push_back(argv[++i]);
         } else if (arg == "-c") {
             compile_to_object = true;
         } else if (arg == "-x") {
@@ -259,7 +263,7 @@ int main(int argc, char* argv[]) {
             ClangCompiler clang_compiler(argv[0]);
             clang_compiler.setKeepTemps(keep_temps);
             
-            if (!clang_compiler.compileToExecutable(ir_code, output_file, {}, optimize_level)) {
+            if (!clang_compiler.compileToExecutable(ir_code, output_file, {}, optimize_level, libraries)) {
                 progress.failed(clang_compiler.getLastError());
                 return 1;
             }

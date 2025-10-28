@@ -32,6 +32,11 @@ struct Type {
         BOOL,
         STRING,
         
+        // FFI/C interop types
+        CSTR,      // C string (const char*)
+        INTPTR,    // Raw pointer (i8*)
+        VOID,      // Void return type
+        
         // Composite types
         FUNCTION,  // a -> b
         LIST,      // [a]
@@ -76,6 +81,15 @@ struct Type {
     }
     static TypePtr makeString() {
         return std::make_shared<Type>(STRING);
+    }
+    static TypePtr makeCStr() {
+        return std::make_shared<Type>(CSTR);
+    }
+    static TypePtr makeIntPtr() {
+        return std::make_shared<Type>(INTPTR);
+    }
+    static TypePtr makeVoid() {
+        return std::make_shared<Type>(VOID);
     }
     static TypePtr makeFunction(TypePtr param, TypePtr ret) {
         auto t = std::make_shared<Type>(FUNCTION);
@@ -223,7 +237,10 @@ struct Expr {
     TypePtr return_type;  // optional
     bool is_extern = false;  // Mark external/foreign functions
     
-    // Collections
+    // For BLOCK: sequence of statements
+    std::vector<StmtPtr> statements;
+    
+    // For LIST_LITERAL and TUPLE_LITERAL: sequence of expressions
     std::vector<ExprPtr> elements;
     
     // List comprehension

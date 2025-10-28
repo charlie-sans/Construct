@@ -538,3 +538,10 @@ extern "C" void construct_showln(void) {
     printf("\n");
 }
 
+/// Convert Construct string to C string
+/// Since Construct strings are already C strings (char*), this is a no-op
+/// but exists for FFI type safety and clarity
+extern "C" const char* construct_string_to_cstr(const char* str) {
+    return str;
+}
+

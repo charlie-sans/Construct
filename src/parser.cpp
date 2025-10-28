@@ -196,10 +196,7 @@ StmtPtr Parser::parseStatement() {
     }
     
     if (check(TokenType::KW_FN)) {
-        auto stmt = parseFunctionDef();
-        if (is_extern && stmt->expr) {
-            stmt->expr->is_extern = true;
-        }
+        auto stmt = parseFunctionDef(is_extern);
         return stmt;
     } else if (is_extern) {
         throw ParseError("'extern' keyword must be followed by 'fn'");
@@ -290,8 +287,8 @@ StmtPtr Parser::parseLetBinding() {
     return stmt;
 }
 
-StmtPtr Parser::parseFunctionDef() {
-    auto stmt = std::make_shared<Statement>(Statement::EXPR_STMT);
+StmtPtr Parser::parseFunctionDef(bool is_extern) {
+    auto stmt = std::make_shared<Statement>(Statement::FUNCTION_DEF);
     auto expr = std::make_shared<Expr>(Expr::LAMBDA);
 
     advance();  // consume 'fn'
@@ -304,6 +301,7 @@ StmtPtr Parser::parseFunctionDef() {
         if (tokens[current + 1].type == TokenType::LPAREN) {
             // Named function (block or simple style or extern)
             expr->fn_name = advance().value;  // consume name
+            stmt->name = expr->fn_name;  // Also set statement name
 
             advance();  // consume '('
             expr->parameters = parseFunctionParameters();
@@ -319,25 +317,18 @@ StmtPtr Parser::parseFunctionDef() {
 
             // Block style: fn name(params) { ... } or fn name(params) -> type { ... }
             // or extern-style: fn name(params): type
-            expr->kind = Expr::BLOCK_FN;
+            if (!is_extern) {
+                expr->kind = Expr::BLOCK_FN;
+            }
 
             // Accept either : type or -> type
             if (match(TokenType::COLON) || match(TokenType::ARROW)) {
                 expr->return_type = parseType();
             }
 
-            // Check if this is an extern function (no body follows)
-            // An extern function will have a type annotation and the next token will NOT be '{'
-            if (expr->return_type && !check(TokenType::LBRACE)) {
-                // This is an extern function - no body needed
+            // For extern functions, we don't need a body
+            if (is_extern) {
                 expr->is_extern = true;
-                stmt->expr = expr;
-                return stmt;
-            }
-
-            // For extern functions marked explicitly with is_extern, no body is required
-            if (expr->is_extern) {
-                // Extern function - no body needed
                 stmt->expr = expr;
                 return stmt;
             }
@@ -346,7 +337,7 @@ StmtPtr Parser::parseFunctionDef() {
 
             // Parse function body (list of statements)
             auto block = std::make_shared<Expr>(Expr::BLOCK);
-            block->elements.clear();
+            block->statements.clear();
 
             while (!check(TokenType::RBRACE) && !check(TokenType::EOF_TOKEN)) {
                 while (match(TokenType::NEWLINE)) {}
@@ -357,9 +348,14 @@ StmtPtr Parser::parseFunctionDef() {
                     ret_expr->kind = Expr::IDENTIFIER;
                     ret_expr->name = "return";
                     ret_expr->then_expr = parseExpression();
-                    block->elements.push_back(ret_expr);
+                    auto ret_stmt = std::make_shared<Statement>(Statement::EXPR_STMT);
+                    ret_stmt->expr = ret_expr;
+                    block->statements.push_back(ret_stmt);
                 } else {
-                    block->elements.push_back(parseExpression());
+                    auto expr_result = parseExpression();
+                    auto expr_stmt = std::make_shared<Statement>(Statement::EXPR_STMT);
+                    expr_stmt->expr = expr_result;
+                    block->statements.push_back(expr_stmt);
                 }
 
                 while (match(TokenType::NEWLINE)) {}
@@ -444,6 +440,9 @@ TypePtr Parser::parseFunctionType() {
             else if (t.value == "Float") left = Type::makeFloat();
             else if (t.value == "Bool") left = Type::makeBool();
             else if (t.value == "String") left = Type::makeString();
+            else if (t.value == "CStr") left = Type::makeCStr();
+            else if (t.value == "IntPtr") left = Type::makeIntPtr();
+            else if (t.value == "Void") left = Type::makeVoid();
             else {
                 left = std::make_shared<Type>(Type::VARIABLE);
                 left->var_name = t.value;
@@ -848,24 +847,19 @@ ExprPtr Parser::parseForLoop() {
         auto empty_block = std::make_shared<Expr>(Expr::BLOCK);
         expr->loop_body = empty_block;
     } else {
-        // Parse block of expressions until 'end'
+        // Parse block of statements until 'end'
         auto block = std::make_shared<Expr>(Expr::BLOCK);
-        
         while (!check(TokenType::KW_END)) {
-            // Skip whitespace between expressions
+            // Skip whitespace between statements
             while (match(TokenType::NEWLINE) || match(TokenType::INDENT) || match(TokenType::DEDENT)) {}
-            
             if (check(TokenType::KW_END)) break;
-            
-            auto body_expr = parseExpression();
-            if (body_expr) {
-                block->elements.push_back(body_expr);
+            StmtPtr stmt = parseStatement();
+            if (stmt) {
+                block->statements.push_back(stmt);
             }
-            
-            // Skip whitespace after expression
+            // Skip whitespace after statement
             while (match(TokenType::NEWLINE) || match(TokenType::INDENT) || match(TokenType::DEDENT)) {}
         }
-        
         expr->loop_body = block;
     }
     
@@ -896,21 +890,21 @@ ExprPtr Parser::parseWhileLoop() {
         auto empty_block = std::make_shared<Expr>(Expr::BLOCK);
         expr->loop_body = empty_block;
     } else {
-        // Parse block of expressions until 'end'
+        // Parse block of statements until 'end'
         auto block = std::make_shared<Expr>(Expr::BLOCK);
         
         while (!check(TokenType::KW_END)) {
-            // Skip whitespace between expressions
+            // Skip whitespace between statements
             while (match(TokenType::NEWLINE) || match(TokenType::INDENT) || match(TokenType::DEDENT)) {}
             
             if (check(TokenType::KW_END)) break;
             
-            auto body_expr = parseExpression();
-            if (body_expr) {
-                block->elements.push_back(body_expr);
+            StmtPtr stmt = parseStatement();
+            if (stmt) {
+                block->statements.push_back(stmt);
             }
             
-            // Skip whitespace after expression
+            // Skip whitespace after statement
             while (match(TokenType::NEWLINE) || match(TokenType::INDENT) || match(TokenType::DEDENT)) {}
         }
         

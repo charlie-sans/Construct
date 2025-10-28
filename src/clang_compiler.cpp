@@ -150,7 +150,8 @@ bool ClangCompiler::compileToAssembly(const std::string& ir_code,
 bool ClangCompiler::compileToExecutable(const std::string& ir_code,
                                        const std::string& output_file,
                                        const std::vector<std::string>& stdlib_objects,
-                                       int optimize_level) {
+                                       int optimize_level,
+                                       const std::vector<std::string>& libraries) {
     try {
         std::cout << "Compiling to executable: " << output_file << std::endl;
         
@@ -167,13 +168,13 @@ bool ClangCompiler::compileToExecutable(const std::string& ir_code,
         
         // Build clang command to compile IR directly to executable
         std::stringstream cmd;
-        cmd << "clang";
-        
+        cmd << "clang -g"; // Add debug symbols
+
         // Add optimization level
         if (optimize_level > 0) {
             cmd << " -O" << optimize_level;
         }
-        
+
         // Output file
         cmd << " -o \"" << output_file << "\"";
         
@@ -187,6 +188,11 @@ bool ClangCompiler::compileToExecutable(const std::string& ir_code,
         
         // Link against construct_stdlib shared library
         cmd << " -lconstruct_stdlib";
+        
+        // Add user-specified libraries
+        for (const auto& lib : libraries) {
+            cmd << " -l" << lib;
+        }
         
         // Add library search paths and runtime library paths
         // First add the compiler's own directory, then fall back to relative paths and system locations

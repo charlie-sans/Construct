@@ -36,7 +36,7 @@ private:
     // Parsing methods
     StmtPtr parseStatement();
     StmtPtr parseLetBinding();
-    StmtPtr parseFunctionDef();
+    StmtPtr parseFunctionDef(bool is_extern = false);
     ExprPtr parseExpression();
     ExprPtr parsePipe();
     ExprPtr parseLogicalOr();

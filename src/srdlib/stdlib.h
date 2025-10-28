@@ -223,6 +223,9 @@ void construct_showln_string(const char* str);
 /// Show newline only
 void construct_showln(void);
 
+/// Convert Construct string to C string (FFI helper)
+const char* construct_string_to_cstr(const char* str);
+
 #ifdef __cplusplus
 }
 #endif

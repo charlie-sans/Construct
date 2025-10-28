@@ -1,7 +1,0 @@
-// Simple test of extern functions - just declarations
-extern fn printf(fmt: String): Int
-extern fn sin(x: Float): Float
-extern fn sqrt(x: Float): Float
-
-// Call printf which returns Int - this matches main's return type
-let result: Int = printf("Extern functions work!\n")
