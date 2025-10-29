@@ -1,0 +1,38 @@
+// raylib.cst
+// raylib bindings for CST
+
+// external functions
+extern fn InitWindow(width: Int, height: Int, title: CStr)
+extern fn BeginDrawing()
+extern fn EndDrawing()
+extern fn SetWindowTitle(title: CStr)
+extern fn GetScreenWidth() -> Int
+extern fn GetScreenHeight() -> Int
+extern fn IsKeyPressed(key: Int) -> Int
+extern fn IsMouseButtonPressed(button: Int) -> Int
+extern fn GetMouseX() -> Int
+extern fn GetMouseY() -> Int
+extern fn IsMouseButtonReleased(button: Int) -> Int
+extern fn GetMouseWheelMove() -> Int
+extern fn GetMousePosition() -> (Int, Int)
+extern fn SetMousePosition(x: Int, y: Int)
+extern fn SetTargetFPS(fps: Int)
+extern fn DrawCircle(centerX: Int, centerY: Int, radius: Int, color: Int)
+extern fn DrawRectangle(x: Int, y: Int, width: Int, height: Int, color: Int)
+extern fn DrawLine(startX: Int, startY: Int, endX: Int, endY: Int, color: Int)
+extern fn DrawTriangle(v1: (Int, Int), v2: (Int, Int), v3: (Int, Int), color: Int)
+extern fn DrawPoly(center: (Int, Int), sides: Int, radius: Int, rotation: Float, color: Int)
+extern fn LoadImage(fileName: CStr) -> Image
+extern fn CloseWindow()
+extern fn WindowShouldClose() -> Int
+
+// external types
+
+type Vector2 = {X: Float, Y: Float}
+type Vector3 = {X: Float, Y: Float, Z: Float}
+type Vector4 = {X: Float, Y: Float, Z: Float, W: Float}
+type Color = {R: UChar, G: UChar, B: UChar, A: UChar}
+type Image = {data: IntPtr, width: Int, height: Int, mipmaps: Int, format: Int}
+
+// Color constant - use record literal directly
+let raywhite = {R: 245, G: 245, B: 245, A: 255}

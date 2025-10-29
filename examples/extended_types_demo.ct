@@ -1,0 +1,30 @@
+// Extended Types Demo
+// Demonstrates usage of new C integer and float types
+
+// Character types
+let char_a: Char = 65        // ASCII for 'A'
+let char_z: Char = 122       // ASCII for 'z'
+let byte_val: UChar = 255    // Max unsigned char
+
+// Short integers
+let short_val: Short = 1000
+let ushort_val: UShort = 65535
+
+// Extended integer types
+let uint_val: UInt = 4294967295    // Max 32-bit unsigned
+let long_val: Long = 9223372036854775807  // Max 64-bit signed
+let ulong_val: ULong = 18446744073709551615  // Max 64-bit unsigned
+
+// Float types
+let float_pi: Float = 3.14159
+let double_pi: Double = 3.141592653589793
+
+// Traditional types still work
+let int_val: Int = 42
+let bool_val: Bool = true
+let str_val: String = "Hello"
+
+// Can mix types
+dump(int_val)
+dump(float_pi)
+dump(double_pi)

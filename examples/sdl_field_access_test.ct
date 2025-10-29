@@ -1,0 +1,26 @@
+// SDL Field Access Test
+// Demonstrates accessing struct fields from C libraries
+
+// For SDL event access, we define the types that match C
+// The .type field would need special handling for opaque structs
+
+// Option 1: Use helper functions (Recommended for now)
+extern fn SDL_PollEvent() -> IntPtr
+extern fn SDL_CreateWindow(title: CStr, x: Int, y: Int, w: Int, h: Int, flags: Int) -> IntPtr
+extern fn get_event_type(event: IntPtr) -> Int
+
+// Constants
+let SDL_QUIT = 12
+
+// Test: Keywords can be used as field names in Construct types
+type Event = {
+    type: Int,
+    let: String,
+    fn: Int
+}
+
+let test_event = {type: 42, let: "hello", fn: 1}
+dump(test_event.type)
+dump(test_event.let)
+dump(test_event.fn)
+

@@ -1,0 +1,9 @@
+// Simplest test of keyword field names
+
+// Type with keyword field
+type Config = {
+    value: Int
+}
+
+let cfg = {value: 42}
+dump(cfg.value)

@@ -26,25 +26,37 @@ using StmtPtr = std::shared_ptr<Statement>;
 
 struct Type {
     enum Kind {
-        // Primitive types
-        INT,
-        FLOAT,
+        // Primitive integer types
+        INT,           // int (32-bit)
+        CHAR,          // char (8-bit signed)
+        UCHAR,         // unsigned char (8-bit unsigned)
+        SHORT,         // short (16-bit signed)
+        USHORT,        // unsigned short (16-bit unsigned)
+        UINT,          // unsigned int (32-bit unsigned)
+        LONG,          // long (64-bit signed)
+        ULONG,         // unsigned long (64-bit unsigned)
+        LONGLONG,      // long long (64-bit signed)
+        ULONGLONG,     // unsigned long long (64-bit unsigned)
+        
+        // Primitive float types
+        FLOAT,         // float (32-bit)
+        DOUBLE,        // double (64-bit)
         BOOL,
         STRING,
         
         // FFI/C interop types
-        CSTR,      // C string (const char*)
-        INTPTR,    // Raw pointer (i8*)
-        VOID,      // Void return type
+        CSTR,          // C string (const char*)
+        INTPTR,        // Raw pointer (i8*)
+        VOID,          // Void return type
         
         // Composite types
-        FUNCTION,  // a -> b
-        LIST,      // [a]
-        TUPLE,     // (a, b, c)
-        RECORD,    // {x: Int, y: Int}
+        FUNCTION,      // a -> b
+        LIST,          // [a]
+        TUPLE,         // (a, b, c)
+        RECORD,        // {x: Int, y: Int}
         
         // Meta types
-        VARIABLE,  // Type variable (for inference)
+        VARIABLE,      // Type variable (for inference)
         UNKNOWN,
     } kind;
 
@@ -70,12 +82,47 @@ struct Type {
 
     Type(Kind k) : kind(k) {}
     
+    // Integer type factories
     static TypePtr makeInt() {
         return std::make_shared<Type>(INT);
     }
+    static TypePtr makeChar() {
+        return std::make_shared<Type>(CHAR);
+    }
+    static TypePtr makeUChar() {
+        return std::make_shared<Type>(UCHAR);
+    }
+    static TypePtr makeShort() {
+        return std::make_shared<Type>(SHORT);
+    }
+    static TypePtr makeUShort() {
+        return std::make_shared<Type>(USHORT);
+    }
+    static TypePtr makeUInt() {
+        return std::make_shared<Type>(UINT);
+    }
+    static TypePtr makeLong() {
+        return std::make_shared<Type>(LONG);
+    }
+    static TypePtr makeULong() {
+        return std::make_shared<Type>(ULONG);
+    }
+    static TypePtr makeLongLong() {
+        return std::make_shared<Type>(LONGLONG);
+    }
+    static TypePtr makeULongLong() {
+        return std::make_shared<Type>(ULONGLONG);
+    }
+    
+    // Float type factories
     static TypePtr makeFloat() {
         return std::make_shared<Type>(FLOAT);
     }
+    static TypePtr makeDouble() {
+        return std::make_shared<Type>(DOUBLE);
+    }
+    
+    // Other type factories
     static TypePtr makeBool() {
         return std::make_shared<Type>(BOOL);
     }
@@ -182,6 +229,9 @@ struct Expr {
         FIELD_ACCESS,  // record.field
         RECORD_UPDATE, // record edit {field: value}
         
+        // Assignment (for mutable variables)
+        ASSIGNMENT,    // x = value (only for mut variables)
+        
         // Other
         PIPE,          // a |> f
         BLOCK,         // sequential statements
@@ -277,20 +327,25 @@ struct Expr {
 
 struct Statement {
     enum Kind {
-        EXPR_STMT,     // expression as statement
-        LET_BINDING,   // x: Int = expr
-        FUNCTION_DEF,  // function definition
-        TYPE_DEF,      // type alias
-        IMPORT,        // import statement
-        INCLUDE,       // include statement
+        EXPR_STMT,        // expression as statement
+        LET_BINDING,      // x: Int = expr
+        FUNCTION_DEF,     // function definition
+        TYPE_DEF,         // type alias
+        EXTERN_TYPE_DEF,  // extern type definition (for C struct interop)
+        IMPORT,           // import statement
+        INCLUDE,          // include statement
     } kind;
 
     ExprPtr expr;
     std::string name;
     TypePtr type_annotation;
+    bool is_mutable = false;  // For mutable variables (mut keyword)
     
     // Type definition
     TypePtr type_value;
+    
+    // Extern type definition: struct fields {name: type, ...}
+    std::vector<std::pair<std::string, TypePtr>> struct_fields;
 
     // Import
     std::string module_name;

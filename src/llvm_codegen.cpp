@@ -43,6 +43,9 @@ private:
     std::unordered_map<std::string, Value*> symbol_table;
     std::unordered_map<std::string, llvm::Type*> type_table;
     
+    // Mutable variables: maps variable name to its allocated memory (AllocaInst)
+    std::unordered_map<std::string, AllocaInst*> mutable_vars;
+    
     // Track imported modules for linking
     std::vector<std::string> imported_modules;
     
@@ -645,10 +648,42 @@ llvm::Type* LLVMCodegen::Impl::convertType(const TypePtr& type) {
     if (!type) return llvm::Type::getInt32Ty(*context);
     
     switch (type->kind) {
+        // Integer types
         case Type::INT:
             return llvm::Type::getInt32Ty(*context);
-            
+        
+        case Type::CHAR:
+            return llvm::Type::getInt8Ty(*context);
+        
+        case Type::UCHAR:
+            return llvm::Type::getInt8Ty(*context);
+        
+        case Type::SHORT:
+            return llvm::Type::getInt16Ty(*context);
+        
+        case Type::USHORT:
+            return llvm::Type::getInt16Ty(*context);
+        
+        case Type::UINT:
+            return llvm::Type::getInt32Ty(*context);
+        
+        case Type::LONG:
+            return llvm::Type::getInt64Ty(*context);
+        
+        case Type::ULONG:
+            return llvm::Type::getInt64Ty(*context);
+        
+        case Type::LONGLONG:
+            return llvm::Type::getInt64Ty(*context);
+        
+        case Type::ULONGLONG:
+            return llvm::Type::getInt64Ty(*context);
+        
+        // Float types
         case Type::FLOAT:
+            return llvm::Type::getFloatTy(*context);
+        
+        case Type::DOUBLE:
             return llvm::Type::getDoubleTy(*context);
             
         case Type::BOOL:
@@ -758,7 +793,17 @@ std::string LLVMCodegen::Impl::generateIR(const Program& program) {
                 } else {
                     auto value = codegenExpr(stmt->expr);
                     if (value) {
-                        symbol_table[stmt->name] = value;
+                        if (stmt->is_mutable) {
+                            // For mutable variables, allocate stack memory and store the value
+                            AllocaInst* alloca = builder->CreateAlloca(value->getType(), nullptr, stmt->name);
+                            builder->CreateStore(value, alloca);
+                            mutable_vars[stmt->name] = alloca;
+                            // Also store in symbol table as the alloca
+                            symbol_table[stmt->name] = alloca;
+                        } else {
+                            // For immutable variables, just store the value directly
+                            symbol_table[stmt->name] = value;
+                        }
                         last_value = value;
                     }
                 }
@@ -841,7 +886,17 @@ void LLVMCodegen::Impl::codegenStmt(const StmtPtr& stmt) {
         case Statement::LET_BINDING: {
             auto value = codegenExpr(stmt->expr);
             if (value) {
-                symbol_table[stmt->name] = value;
+                if (stmt->is_mutable) {
+                    // For mutable variables, allocate stack memory and store the value
+                    AllocaInst* alloca = builder->CreateAlloca(value->getType(), nullptr, stmt->name);
+                    builder->CreateStore(value, alloca);
+                    mutable_vars[stmt->name] = alloca;
+                    // Also store in symbol table as the alloca for potential use
+                    symbol_table[stmt->name] = alloca;
+                } else {
+                    // For immutable variables, just store the value directly
+                    symbol_table[stmt->name] = value;
+                }
             }
             break;
         }
@@ -851,6 +906,20 @@ void LLVMCodegen::Impl::codegenStmt(const StmtPtr& stmt) {
                 codegenFunction(stmt->expr, stmt->name);
             }
             break;
+        
+        case Statement::EXTERN_TYPE_DEF: {
+            // Register the external type - it's just a placeholder
+            // The actual C struct layout is determined by the C side
+            // We just need to know the type name and field names for dot accessors
+            symbol_table[stmt->name] = nullptr;  // Mark as extern type
+            
+            // Store field information for later use in field access
+            for (const auto& [field_name, field_type] : stmt->struct_fields) {
+                // Field type information is available but not used in MVP
+                // In future, we can validate field access against these types
+            }
+            break;
+        }
         
         case Statement::IMPORT:
             // Record imported module for linking
@@ -886,6 +955,14 @@ Value* LLVMCodegen::Impl::codegenExpr(const ExprPtr& expr) {
         }
             
         case Expr::IDENTIFIER: {
+            // Check if it's a mutable variable (allocated)
+            auto mut_it = mutable_vars.find(expr->name);
+            if (mut_it != mutable_vars.end()) {
+                // Load from the allocated memory
+                return builder->CreateLoad(mut_it->second->getAllocatedType(), mut_it->second, expr->name);
+            }
+            
+            // Otherwise check symbol table
             auto it = symbol_table.find(expr->name);
             if (it != symbol_table.end()) {
                 return it->second;
@@ -998,6 +1075,29 @@ Value* LLVMCodegen::Impl::codegenExpr(const ExprPtr& expr) {
                 last_val = ConstantInt::get(llvm::Type::getInt32Ty(*context), 0);
             }
             return last_val;
+        }
+        
+        case Expr::ASSIGNMENT: {
+            // Assignment to mutable variable: var = value
+            // Check if variable exists and is mutable
+            auto it = mutable_vars.find(expr->name);
+            if (it == mutable_vars.end()) {
+                throw std::runtime_error("Cannot assign to immutable variable '" + expr->name + 
+                                       "'. Use 'mut' keyword when declaring: let mut " + expr->name);
+            }
+            
+            // Generate code for the right-hand side
+            auto value = codegenExpr(expr->right);
+            if (!value) {
+                throw std::runtime_error("Failed to generate value for assignment");
+            }
+            
+            // Store the value to the allocated memory
+            AllocaInst* alloca = it->second;
+            builder->CreateStore(value, alloca);
+            
+            // Return the stored value
+            return value;
         }
             
         default:

@@ -38,6 +38,7 @@ private:
     StmtPtr parseLetBinding();
     StmtPtr parseFunctionDef(bool is_extern = false);
     ExprPtr parseExpression();
+    ExprPtr parseAssignment();
     ExprPtr parsePipe();
     ExprPtr parseLogicalOr();
     ExprPtr parseLogicalAnd();

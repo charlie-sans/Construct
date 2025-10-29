@@ -38,6 +38,7 @@ enum class TokenType {
     KW_END,
     KW_WHILE,
     KW_EXTERN,
+    KW_MUT,
     
     // Operators
     PLUS,          // +

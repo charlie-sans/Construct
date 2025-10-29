@@ -23,6 +23,7 @@ const std::unordered_map<std::string, TokenType> Lexer::KEYWORDS = {
     {"end", TokenType::KW_END},
     {"while", TokenType::KW_WHILE},
     {"extern", TokenType::KW_EXTERN},
+    {"mut", TokenType::KW_MUT},
     {"edit", TokenType::EDIT},
 };
 

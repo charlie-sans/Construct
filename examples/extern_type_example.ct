@@ -1,0 +1,33 @@
+// Example: Using extern type for C struct interop
+// This demonstrates the MVP implementation of extern type
+
+// Define an external C struct
+extern type Point {
+    x: Float
+    y: Float
+}
+
+// Declare external C functions that use the struct
+extern fn create_point(x: Float, y: Float): Point
+extern fn print_point(p: Point): Void
+extern fn distance_to_origin(p: Point): Float
+
+// Use the extern type
+let p1 = create_point(3.0, 4.0)
+dump("Point created")
+
+// Access fields with dot accessor
+dump(p1.x)
+dump(p1.y)
+
+// Call C function with the struct
+print_point(p1)
+
+// Use struct in return value
+let dist = distance_to_origin(p1)
+dump(dist)
+
+// Create multiple points
+let p2 = create_point(1.0, 1.0)
+dump(p2.x)
+dump(p2.y)

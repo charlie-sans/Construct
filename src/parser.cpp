@@ -188,7 +188,7 @@ StmtPtr Parser::parseStatement() {
         return parseLetBinding();
     }
     
-    // Check for extern fn
+    // Check for extern fn or extern type
     bool is_extern = false;
     if (check(TokenType::KW_EXTERN)) {
         is_extern = true;
@@ -198,17 +198,36 @@ StmtPtr Parser::parseStatement() {
     if (check(TokenType::KW_FN)) {
         auto stmt = parseFunctionDef(is_extern);
         return stmt;
-    } else if (is_extern) {
-        throw ParseError("'extern' keyword must be followed by 'fn'");
-    }
-    
-    if (check(TokenType::KW_TYPE)) {
+    } else if (check(TokenType::KW_TYPE)) {
+        // Handle both 'type X = Y' and 'extern type X { fields }'
         advance();  // skip 'type'
-        auto stmt = std::make_shared<Statement>(Statement::TYPE_DEF);
+        auto stmt = std::make_shared<Statement>(
+            is_extern ? Statement::EXTERN_TYPE_DEF : Statement::TYPE_DEF
+        );
         stmt->name = consume(TokenType::IDENTIFIER, "Expected type name").value;
-        consume(TokenType::EQ, "Expected '=' in type definition");
-        stmt->type_value = parseType();
+        
+        if (is_extern) {
+            // extern type Point { x: Float, y: Float }
+            consume(TokenType::LBRACE, "Expected '{' for extern type fields");
+            while (!check(TokenType::RBRACE)) {
+                std::string field_name = consume(TokenType::IDENTIFIER, "Expected field name").value;
+                consume(TokenType::COLON, "Expected ':' after field name");
+                TypePtr field_type = parseType();
+                stmt->struct_fields.push_back({field_name, field_type});
+                
+                if (!check(TokenType::RBRACE)) {
+                    consume(TokenType::COMMA, "Expected ',' or '}'");
+                }
+            }
+            consume(TokenType::RBRACE, "Expected '}' after fields");
+        } else {
+            // Regular type alias: type Point = {x: Float, y: Float}
+            consume(TokenType::EQ, "Expected '=' in type definition");
+            stmt->type_value = parseType();
+        }
         return stmt;
+    } else if (is_extern) {
+        throw ParseError("'extern' keyword must be followed by 'fn' or 'type'");
     }
     
     if (check(TokenType::KW_IMPORT)) {
@@ -269,6 +288,11 @@ StmtPtr Parser::parseStatement() {
 StmtPtr Parser::parseLetBinding() {
     auto stmt = std::make_shared<Statement>(Statement::LET_BINDING);
     advance();  // consume 'let'
+
+    // Check for mut keyword
+    if (match(TokenType::KW_MUT)) {
+        stmt->is_mutable = true;
+    }
 
     stmt->name = consume(TokenType::IDENTIFIER, "Expected identifier").value;
 
@@ -419,9 +443,27 @@ TypePtr Parser::parseFunctionType() {
         consume(TokenType::RBRACKET, "Expected ']'");
     } else if (match(TokenType::LBRACE)) {
         left = std::make_shared<Type>(Type::RECORD);
-        // Parse record fields
+        // Parse record fields - allow keywords as field names
         do {
-            std::string field = consume(TokenType::IDENTIFIER, "Expected field name").value;
+            std::string field;
+            if (check(TokenType::IDENTIFIER)) {
+                field = advance().value;
+            } else if (check(TokenType::KW_TYPE)) {
+                field = "type";
+                advance();
+            } else if (check(TokenType::KW_LET)) {
+                field = "let";
+                advance();
+            } else if (check(TokenType::KW_FN)) {
+                field = "fn";
+                advance();
+            } else if (check(TokenType::KW_IF)) {
+                field = "if";
+                advance();
+            } else {
+                throw ParseError("Expected field name in record type");
+            }
+            
             consume(TokenType::COLON, "Expected ':' in record type");
             auto field_type = parseType();
             left->fields.push_back({field, field_type});
@@ -436,8 +478,21 @@ TypePtr Parser::parseFunctionType() {
     } else {
         Token t = advance();
         if (t.type == TokenType::IDENTIFIER) {
+            // Integer types
             if (t.value == "Int") left = Type::makeInt();
+            else if (t.value == "Char") left = Type::makeChar();
+            else if (t.value == "UChar") left = Type::makeUChar();
+            else if (t.value == "Short") left = Type::makeShort();
+            else if (t.value == "UShort") left = Type::makeUShort();
+            else if (t.value == "UInt") left = Type::makeUInt();
+            else if (t.value == "Long") left = Type::makeLong();
+            else if (t.value == "ULong") left = Type::makeULong();
+            else if (t.value == "LongLong") left = Type::makeLongLong();
+            else if (t.value == "ULongLong") left = Type::makeULongLong();
+            // Float types
             else if (t.value == "Float") left = Type::makeFloat();
+            else if (t.value == "Double") left = Type::makeDouble();
+            // Other types
             else if (t.value == "Bool") left = Type::makeBool();
             else if (t.value == "String") left = Type::makeString();
             else if (t.value == "CStr") left = Type::makeCStr();
@@ -464,7 +519,26 @@ TypePtr Parser::parseFunctionType() {
 ExprPtr Parser::parseExpression() {
     // Skip any leading newlines before parsing expression
     while (match(TokenType::NEWLINE) || match(TokenType::INDENT) || match(TokenType::DEDENT)) {}
-    return parsePipe();
+    return parseAssignment();
+}
+
+ExprPtr Parser::parseAssignment() {
+    auto expr = parsePipe();
+    
+    // Check for assignment: var = value (only for mutable variables)
+    if (match(TokenType::EQ)) {
+        // Left side must be an identifier
+        if (expr->kind != Expr::IDENTIFIER) {
+            throw ParseError("Assignment target must be an identifier (mutable variable)");
+        }
+        
+        auto assign_expr = std::make_shared<Expr>(Expr::ASSIGNMENT);
+        assign_expr->name = expr->name;  // The variable being assigned to
+        assign_expr->right = parseAssignment();  // Right-associative
+        return assign_expr;
+    }
+    
+    return expr;
 }
 
 ExprPtr Parser::parsePipe() {
@@ -637,8 +711,37 @@ ExprPtr Parser::parsePostfix() {
             app->arguments = args;
             expr = app;
         } else if (match(TokenType::DOT)) {
-            // Field access
-            std::string field = consume(TokenType::IDENTIFIER, "Expected field name").value;
+            // Field access - allow identifiers and keywords as field names
+            std::string field;
+            Token field_token = peek();
+            
+            if (check(TokenType::IDENTIFIER)) {
+                field = advance().value;
+            } else if (check(TokenType::KW_TYPE)) {
+                field = "type";
+                advance();
+            } else if (check(TokenType::KW_LET)) {
+                field = "let";
+                advance();
+            } else if (check(TokenType::KW_FN)) {
+                field = "fn";
+                advance();
+            } else if (check(TokenType::KW_IF)) {
+                field = "if";
+                advance();
+            } else if (check(TokenType::KW_MATCH)) {
+                field = "match";
+                advance();
+            } else if (check(TokenType::KW_FOR)) {
+                field = "for";
+                advance();
+            } else if (check(TokenType::KW_WHILE)) {
+                field = "while";
+                advance();
+            } else {
+                throw ParseError("Expected field name after '.'");
+            }
+            
             auto access = std::make_shared<Expr>(Expr::FIELD_ACCESS);
             access->record_expr = expr;
             access->field_name = field;

@@ -1,0 +1,4 @@
+// Simple mut test
+let mut num = 0
+num = num + 1
+dump(num)
